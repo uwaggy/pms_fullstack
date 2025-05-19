@@ -9,6 +9,9 @@ import {
   sendPaswordResetEmail,
 } from "../utils/mail";
 
+
+//Handle user login by validating email and password, comparing the hashed password,
+//  generating a JWT token if valid, and returning a success response with user info and token.
 const login = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
@@ -29,6 +32,9 @@ const login = async (req: Request, res: Response) => {
   }
 };
 
+
+//Initiate password reset by generating a 6-digit code with 6-hour expiry,
+//  updating the user's record, sending a reset email, and returning a success message.
 const initiateResetPassword = async (req: Request, res: Response) => {
   try {
     const { email } = req.body;
@@ -54,6 +60,9 @@ const initiateResetPassword = async (req: Request, res: Response) => {
   }
 };
 
+
+//Reset the user's password by validating the code and expiry, hashing the new password,
+//  updating the user's record, clearing the reset data, and returning a success response.
 const resetPassword = async (req: Request, res: Response) => {
   try {
     const { password, code } = req.body;
@@ -79,10 +88,12 @@ const resetPassword = async (req: Request, res: Response) => {
   }
 };
 
+
+//Verify email request by checking if the user exists and is unverified, 
+// then generate a 6-digit code with 6-hour expiry, update user with code and status, send a verification email, and return a success response.
 const initiateEmailVerification: any = async (req:Request, res:Response) => {
   try {
     const { email } = req.body;
-
     const existingUser = await prisma.user.findUnique({
       where: { email },
     });
@@ -122,6 +133,9 @@ const initiateEmailVerification: any = async (req:Request, res:Response) => {
   }
 };
 
+
+//Verify the user's email by checking the valid code from URL params, and if found, mark the user as verified, clear
+//  the code and expiry, and return a success message.
 const verifyEmail = async (req: Request, res: Response) => {
   try {
     const { code } = req.params;
@@ -146,6 +160,8 @@ const verifyEmail = async (req: Request, res: Response) => {
   }
 };
 
+// grouping and exports all functions as a single object for use in route handlers.
+
 const authController = {
   login,
   initiateResetPassword,
@@ -153,5 +169,7 @@ const authController = {
   initiateEmailVerification,
   verifyEmail,
 };
+
+
 
 export default authController;

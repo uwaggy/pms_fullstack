@@ -24,6 +24,8 @@ export class InitiateResetPasswordDTO {
     email: string;
 
 }
+
+//Used to reset a password after verifying an OTP/code.
 export class InitiateVerifyEmailDTO {
 
     @IsEmail()

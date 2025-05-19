@@ -5,6 +5,8 @@ import { validate } from "class-validator";
 import { plainToInstance } from "class-transformer";
 import { sendParkingSlotConfirmationEmail, sendRejectionEmail } from "../utils/mail";
 
+//Converts incoming data (req.body) into a CreateParkingRequestDTO instance and validates it using class-validator.
+//If validation fails, return a 400 error with the validation errors.
 const createParkingRequest = async (req: Request, res: Response) => {
     const dto = plainToInstance(CreateParkingRequestDTO, req.body);
     const errors = await validate(dto);
@@ -13,7 +15,7 @@ const createParkingRequest = async (req: Request, res: Response) => {
     }
 
     try {
-        // Check if vehicle belongs to user
+        // Check if vehicle belongs to  authenticated user
         const vehicle = await prisma.vehicle.findUnique({
             where: { id: dto.vehicleId },
         });
@@ -21,7 +23,7 @@ const createParkingRequest = async (req: Request, res: Response) => {
             return res.status(403).json({ message: "Unauthorized vehicle" });
         }
 
-        // Create parking request with status PENDING
+        // Inserts a new parkingRequest record into the database with status PENDING, the current user ID, vehicle ID, and checkIn/checkOut times.
         const parkingRequest = await prisma.parkingRequest.create({
             data: {
                 userId: (req as any).user.id,
@@ -38,6 +40,8 @@ const createParkingRequest = async (req: Request, res: Response) => {
     }
 };
 
+//Fetches parking requests where the userId matches the current user
+//Related parkingSlot and vehicle are joined in the query.
 const getUserParkingRequests = async (req: Request, res: Response) => {
     try {
         const requests = await prisma.parkingRequest.findMany({
@@ -50,6 +54,8 @@ const getUserParkingRequests = async (req: Request, res: Response) => {
     }
 };
 
+
+//Retrieves all parking requests and Fetches associated parkingSlot, vehicle, and user info.
 const getAllParkingRequests = async (req: Request, res: Response) => {
     try {
         const requests = await prisma.parkingRequest.findMany({
@@ -60,6 +66,8 @@ const getAllParkingRequests = async (req: Request, res: Response) => {
         return res.status(500).json({ message: "Failed to fetch parking requests", error });
     }
 };
+
+//Look up the request by ID. If not found, return 404.Ensure it’s still PENDING. Otherwise, return 400
 
 const approveParkingRequest = async (req: Request, res: Response) => {
     const { id } = req.params;
@@ -75,7 +83,8 @@ const approveParkingRequest = async (req: Request, res: Response) => {
             return res.status(400).json({ message: "Request already processed" });
         }
 
-        // Find an available parking slot
+        //Search for any parkingSlot where isAvailable is true.
+//If none available, return a 400 message
         const availableSlot = await prisma.parkingSlot.findFirst({
             where: { isAvailable: true },
         });
@@ -83,7 +92,8 @@ const approveParkingRequest = async (req: Request, res: Response) => {
             return res.status(400).json({ message: "No available parking slots" });
         }
 
-        // Update request status and assign slot
+        // Search for any parkingSlot where isAvailable is true.
+//If none available, return a 400 message then send an verifcation email
         await prisma.parkingRequest.update({
             where: { id },
             data: {
@@ -93,7 +103,7 @@ const approveParkingRequest = async (req: Request, res: Response) => {
             },
         });
 
-        //send confirmation email to user
+        //Retrieve the user and send them a confirmation email with the slot number.
         const user = await prisma.user.findUnique({
             where: { id: request.userId },
         });
@@ -114,6 +124,9 @@ const approveParkingRequest = async (req: Request, res: Response) => {
     }
 };
 
+
+
+//Retrieve by ID Return 404 if not found Ensure it’s still PENDING If not, return 400 Set status to REJECTED.
 const rejectParkingRequest = async (req: Request, res: Response) => {
     const { id } = req.params;
     try {

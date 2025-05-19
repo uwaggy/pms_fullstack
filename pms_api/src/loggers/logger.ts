@@ -10,3 +10,6 @@ const morganLogger = morgan(customFormat);
 console.log("Morgan logger initialized with timestamped format 🚀");
 
 export default morganLogger;
+
+
+//this logs details about each web request with a time stamp to help track what’s happening.

@@ -60,7 +60,7 @@ const Sidebar: React.FC = () => {
                 key={item.name}
                 to={item.path}
                 className={({ isActive }) =>
-                  `block px-5 py-3 rounded-md hover:bg-green-300 ${
+                  `${
                     isActive ? "bg-green-600 text-white font-semibold" : ""
                   }`
                 }

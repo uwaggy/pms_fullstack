@@ -15,7 +15,7 @@ export const getAllParkingSlots = async (req: Request, res: Response) => {
   }
 };
 
-//get available parking slots
+//get available parking slots Fetches parking slots where isAvailable is true.
 export const getAvailableParkingSlots = async (req: Request, res: Response) =>{
   try{
     const availableParkingSlots = await prisma.parkingSlot.findMany({
@@ -34,6 +34,8 @@ export const getAvailableParkingSlots = async (req: Request, res: Response) =>{
   }
 }
 
+
+//Takes an id from request params Uses findUnique to fetch one parking slot by id.
 export const getParkingSlotById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -50,6 +52,9 @@ export const getParkingSlotById = async (req: Request, res: Response) => {
   }
 };
 
+
+//Takes slotNumber and optionally isAvailable from the request body.
+//Checks if a slot with the same slotNumber already exists to avoid duplicates.
 export const createParkingSlot = async (req: Request, res: Response) => {
   try {
     const { slotNumber, isAvailable } = req.body;
@@ -65,6 +70,7 @@ export const createParkingSlot = async (req: Request, res: Response) => {
     const newParkingSlot = await prisma.parkingSlot.create({
       data: {
         slotNumber,
+        //Creates a new parking slot with isAvailable defaulting to true if not provided.
         isAvailable: isAvailable !== undefined ? isAvailable : true,
       },
     });
@@ -75,7 +81,9 @@ export const createParkingSlot = async (req: Request, res: Response) => {
   }
 };
 
-/// Update parking slot
+
+
+///Updates an existing parking slot identified by id in request params.
 export const updateParkingSlot = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;

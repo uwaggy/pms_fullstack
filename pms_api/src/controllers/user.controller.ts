@@ -37,6 +37,10 @@ const createUser = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     console.log("error", error);
+
+
+//This happens when you're trying to create or update a record with a value that 
+//already exists in a field that is supposed to be unique
     if (error.code === "P2002") {
       const key = error.meta.target[0];
       return ServerResponse.error(
@@ -50,6 +54,7 @@ const createUser = async (req: Request, res: Response) => {
     return ServerResponse.error(res, "Error occured", { error });
   }
 };
+
 
 
 //update user
@@ -79,6 +84,7 @@ const updateUser: any = async (req: AuthRequest, res: Response) => {
     return ServerResponse.error(res, "Error occured", { error });
   }
 };
+
 
 //get logged in user
 const me: any = async (req: AuthRequest, res: Response) => {
@@ -114,6 +120,7 @@ const getById = async (req: Request, res: Response) => {
 // Search user
 const searchUser = async (req: Request, res: Response) => {
   try {
+    //Expects a URL parameter named query Example URL: /api/users/search/John
     const { query } = req.params;
     const users = await prisma.user.findMany({
       where: { names: { contains: query, mode: "insensitive" } },
@@ -123,6 +130,7 @@ const searchUser = async (req: Request, res: Response) => {
     return ServerResponse.error(res, "Error occured", { error });
   }
 };
+
 
 //Delete user
 const deleteUser: any = async (req: AuthRequest, res: Response) => {
@@ -134,6 +142,7 @@ const deleteUser: any = async (req: AuthRequest, res: Response) => {
   }
 };
 
+//To remove a custom avatar/profile picture by replacing it with a predefined default profile picture URL.
 const removeAvatar: any = async (req: AuthRequest, res: Response) => {
   try {
     const user = await prisma.user.update({
@@ -149,6 +158,8 @@ const removeAvatar: any = async (req: AuthRequest, res: Response) => {
   }
 };
 
+
+
 const deleteById = async (req: Request, res: Response) => {
   try {
     const user = await prisma.user.delete({ where: { id: req.params.id } });
@@ -158,6 +169,7 @@ const deleteById = async (req: Request, res: Response) => {
   }
 };
 
+//This function allows an authenticated user to change/update their profile picture (avatar).
 const updateAvatar: any = async (req: AuthRequest, res: Response) => {
   try {
     const user = await prisma.user.update({
@@ -172,6 +184,8 @@ const updateAvatar: any = async (req: AuthRequest, res: Response) => {
   }
 };
 
+
+//The user passes in the old password we find him using the id we verify the password using comparesync and bycrypt
 const updatePassword: any = async (req: AuthRequest, res: Response) => {
   try {
     const { oldPassword, newPassword } = req.body;
@@ -195,6 +209,7 @@ const updatePassword: any = async (req: AuthRequest, res: Response) => {
   }
 };
 
+//Exported Controller
 const userController = {
   createUser,
   updateUser,

@@ -5,7 +5,7 @@ import Sidebar from "../components/commons/sidebar";
 
 const DashboardLayout: React.FC = () => {
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex bg-white-400">
       <div className="w-[15%]">
         <Sidebar />
       </div>

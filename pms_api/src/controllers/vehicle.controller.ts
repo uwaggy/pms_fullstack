@@ -5,12 +5,14 @@ import { validate } from "class-validator";
 import { plainToInstance } from "class-transformer";
 import { AuthRequest } from "../types";
 
+//Convert req.body to a CreateVehicleDTO instance and Validate it using class-validator.
 const createVehicle : any = async (req: AuthRequest, res: Response) => {
     const dto = plainToInstance(CreateVehicleDTO, req.body);
     const errors = await validate(dto);
     if (errors.length > 0) {
         return res.status(400).json({ errors });
     }
+    //Check if a vehicle with the same plate number already exists.
     const existingVehicle = await prisma.vehicle.findFirst({
         where: {
             plateNumber: dto.plateNumber,
@@ -35,6 +37,8 @@ const createVehicle : any = async (req: AuthRequest, res: Response) => {
     }
 };
 
+
+//Retrieves all vehicles associated with the logged-in user (userId)
 const getUserVehicles:any = async (req: AuthRequest , res: Response) => {
     try {
         const vehicles = await prisma.vehicle.findMany({
@@ -46,6 +50,8 @@ const getUserVehicles:any = async (req: AuthRequest , res: Response) => {
     }
 };
 
+
+//Fetches a single vehicle using its id from URL params.
 const getVehicleById = async (req: Request, res: Response) => {
     const { id } = req.params;
     try {
@@ -61,6 +67,8 @@ const getVehicleById = async (req: Request, res: Response) => {
     }
 };
 
+
+//Convert req.body into an instance of UpdateVehicleDTO Validate the incoming data.
 const updateVehicle = async (req: Request, res: Response) => {
     const { id } = req.params;
     const dto = plainToInstance(UpdateVehicleDTO, req.body);
@@ -84,6 +92,8 @@ const updateVehicle = async (req: Request, res: Response) => {
     }
 };
 
+
+//Deletes the vehicle with the specified id.
 const deleteVehicle = async (req: Request, res: Response) => {
     const { id } = req.params;
     try {
@@ -95,7 +105,7 @@ const deleteVehicle = async (req: Request, res: Response) => {
         return res.status(500).json({ message: "Failed to delete vehicle", error });
     }
 };
-
+// Final Export
 const vehicleController = {
     createVehicle,
     getUserVehicles,

@@ -2,12 +2,12 @@
   "openapi": "3.0.0",
   "info": {
     "version": "1.0.0",
-    "title": "NE NodeJS Rest API",
+    "title": "VEHICHE MANAGEMENT SYSTEM ",
     "description": ""
   },
   "servers": [
     {
-      "url": "http://localhost:4060/api/v1"
+      "url": "http://localhost:8070/api/v1"
     }
   ],
   "tags": [

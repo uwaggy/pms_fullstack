@@ -1,3 +1,4 @@
+//whitelist is an array of allowed origins
 const whitelist = [
     "http://localhost:4060",
 ];

@@ -4,21 +4,24 @@ import { AuthMiddleware, AuthRequest } from "../types";
 import prisma from "../../prisma/prisma-client";
 import ServerResponse from "../utils/ServerResponse";
 
+// verify that a user is logged in by checking and validating their JWT token from the request headers.
 export const checkLoggedIn:any = (
   req: AuthRequest,
   res: Response,
   next: NextFunction
 ) => {
   try {
+    // extracts the token from the Authorization header.
     let token = req.headers.authorization;
 
     if (!token) {
       return ServerResponse.unauthenticated(res, "You are not logged in");
     }
+    //Checks if the token exists and is in the correct "Bearer" format.
     if (token.toLowerCase().startsWith("bearer ")) {
       token = token.split(" ")[1];
     }
-
+//Verifies the token using a secret key.
     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY as string);
 
     if (!decoded) {
@@ -35,6 +38,7 @@ export const checkLoggedIn:any = (
 
 
 
+//ensure that the logged-in user is an admin before allowing access to certain routes.
 export const checkAdmin:any = async (
   req: AuthRequest,
   res: Response,
@@ -53,7 +57,7 @@ export const checkAdmin:any = async (
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY as string);
-
+//Uses the decoded user ID to fetch the user from the database.
     const user = await prisma.user.findUnique({
       where: { id: (decoded as any).id },
     });
@@ -61,6 +65,8 @@ export const checkAdmin:any = async (
     if (!user) {
       return ServerResponse.unauthorized(res, "User not found");
     }
+    //Checks if the user's role is "ADMIN".
+//If the user is admin, attaches the user ID to req.user and proceeds.
 
     if (user.role !== "ADMIN") {
       return ServerResponse.unauthorized(
