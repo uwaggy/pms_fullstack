@@ -65,7 +65,7 @@ function DataTable<T>({
   return (
     <div className="space-y-6">
       {/* Search */}
-      <div className="flex justify-between items-center">
+      <div className="flex  justify-between items-center">
         <input
           type="text"
           placeholder="Search..."
@@ -78,14 +78,14 @@ function DataTable<T>({
               setGlobalFilter("");
             }
           }}
-          className="w-72 px-4 py-2 rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-72 px-4 py-2 rounded-md border border-green-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto rounded-lg shadow-md border border-gray-200">
-        <table className="min-w-full divide-y divide-gray-200 text-sm text-gray-800">
-          <thead className="bg-gray-100 uppercase text-xs font-semibold text-gray-600">
+      <div className="overflow-x-auto rounded-lg shadow-md border border-green-200">
+        <table className="min-w-full divide-y divide-green-200 text-sm text-green-800">
+          <thead className="bg-green-100 uppercase text-xs font-semibold text-green-600">
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
@@ -106,8 +106,8 @@ function DataTable<T>({
             {table.getRowModel().rows.map((row, i) => (
               <tr
                 key={row.id}
-                className={`hover:bg-gray-50 ${
-                  i % 2 === 0 ? "bg-white" : "bg-gray-50"
+                className={`hover:bg-green-50 ${
+                  i % 2 === 0 ? "bg-white" : "bg-green-50"
                 }`}
               >
                 {row.getVisibleCells().map((cell) => (
@@ -151,16 +151,16 @@ function DataTable<T>({
                               prev === row.id ? null : row.id
                             );
                           }}
-                          className="hover:bg-gray-200 rounded-full p-1"
+                          className="hover:bg-green-200 rounded-full p-1"
                         >
                           <MoreVertical size={18} />
                         </button>
 
                         {openRowId === row.id && (
-                          <div className="absolute top-10 z-50 w-36 bg-white shadow-lg border rounded-md">
+                          <div className="absolute top-10 z-50 w-36 bg-green-200 shadow-lg border rounded-md">
                             {onEdit && (
                               <button
-                                className="w-full flex items-center px-4 py-2 hover:bg-gray-100 text-sm"
+                                className="w-full flex items-center px-4 py-2 hover:bg-green-100 text-sm"
                                 onClick={() => {
                                   setOpenRowId(null);
                                   const rowData = row.original as T;
@@ -173,7 +173,7 @@ function DataTable<T>({
                             )}
                             {onDelete && (
                               <button
-                                className="w-full flex items-center px-4 py-2 hover:bg-gray-100 text-sm text-purple-600"
+                                className="w-full flex items-center px-4 py-2 hover:bg-green-100 text-sm text-green-600"
                                 onClick={() => {
                                   setOpenRowId(null);
                                   const rowData = row.original as T;
@@ -198,7 +198,7 @@ function DataTable<T>({
       </div>
 
       {/* Pagination */}
-      <div className="flex items-center justify-between text-sm text-gray-600 mt-4">
+      <div className="flex items-center justify-between text-sm text-green-600 mt-4">
         <div className="flex items-center gap-2">
           <label htmlFor="pageSize" className="text-sm">
             Rows per page:

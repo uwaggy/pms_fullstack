@@ -1,6 +1,8 @@
+import { config } from 'dotenv';
+config(); 
+
 import bodyParser from 'body-parser';
 import cors from 'cors';
-import { config } from 'dotenv';
 import express from 'express';
 import http from 'http';
 import swaggerUi from 'swagger-ui-express';
@@ -10,14 +12,17 @@ import router from './routes';
 import morganLogger from './loggers/logger';
 import { startParkingSlotAvailabilityJob } from './utils/parkingSlotAvailabilityJob';
 
-config();
+
+
+console.log('Loaded env PORT:', process.env.PORT);
+console.log('Loaded env DATABASE_URL:', process.env.DATABASE_URL);
 
 const app = express()
 const server = http.createServer(app)
 const PORT = process.env.PORT
 
 app.use(express.json())
-app.use(bodyParser.urlencoded({ extended: true }))
+app.use(bodyParser.urlencoded({ extended: true }))  
 app.use(cors({ origin: "*" }))
 app.use(morganLogger)
 app.disable('x-powered-by');

@@ -18,14 +18,10 @@ const DashboardPage: React.FC = () => {
     const fetchData = async () => {
       try {
         const userData = await getAllUsers();
-        // get where role is user
         const filteredUserData = userData.filter((user:Users) => user.role === "USER");
         setUserCount(filteredUserData.length); 
-        // setUserCount(userData.length);
         const slotData = await getAllSlots();
         setSlotCount(slotData.data.length);
-        console.log("slotCount", slotData);
-        // get where isAvailable is true
         const availableSlots = slotData.data.filter((slot:Slots) => slot.isAvailable === true);
         setAvailableSlots(availableSlots.length);
       } catch (error) {
@@ -37,31 +33,45 @@ const DashboardPage: React.FC = () => {
   }, []);
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-black">Dashboard Analytics</h1>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card>
+    <div className="space-y-8 bg-green-50 min-h-screen p-8 rounded-lg">
+      <h1 className="text-4xl font-extrabold text-green-600 drop-shadow-md">
+        Dashboard 
+      </h1>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <Card className="border-green-600 shadow-lg hover:shadow-2xl transition-shadow duration-300 rounded-xl">
           <CardHeader>
-            <CardTitle>Number of Users</CardTitle>
+            <CardTitle className="text-green-600 font-semibold text-xl">
+              Number of Users
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-4xl font-semibold text-black">{userCount}</p>
+            <p className="text-5xl font-bold text-green-700 tracking-wide">
+              {userCount}
+            </p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="border-green-600 shadow-lg hover:shadow-2xl transition-shadow duration-300 rounded-xl">
           <CardHeader>
-            <CardTitle>Number of slots</CardTitle>
+            <CardTitle className="text-green-600 font-semibold text-xl">
+              Number of Slots
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-4xl font-semibold text-black">{slotCount}</p>
+            <p className="text-5xl font-bold text-green-700 tracking-wide">
+              {slotCount}
+            </p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="border-green-600 shadow-lg hover:shadow-2xl transition-shadow duration-300 rounded-xl">
           <CardHeader>
-            <CardTitle>Available slots</CardTitle>
+            <CardTitle className="text-green-600 font-semibold text-xl">
+              Available Slots
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-4xl font-semibold text-black">{availableSlots}</p>
+            <p className="text-5xl font-bold text-green-700 tracking-wide">
+              {availableSlots}
+            </p>
           </CardContent>
         </Card>
       </div>

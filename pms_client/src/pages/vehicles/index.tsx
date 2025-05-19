@@ -76,11 +76,11 @@ const VehiclePage: React.FC = () => {
   return (
     <div className="p-4">
       <div>
-        <h1 className="text-2xl font-semibold mb-4">Vehicles</h1>
+        <h1 className="text-2xl font-semibold mb-4 text-green-700">Vehicles</h1>
 
         {/* User Create Vehicle */}
         {UserRole === "user" && (
-          <Button onClick={handleCreateVehicle} className="mb-4 mr-2">
+          <Button onClick={handleCreateVehicle} className="mb-4 mr-2 bg-green-800">
             Create Vehicle
           </Button>
         )}

@@ -100,10 +100,10 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
           id="email"
           type="email"
           {...register("email")}
-          className="border-black focus:ring-purple-500  py-6"
+          className="border-black focus:ring-green-500 py-6"
         />
         {errors.email && (
-          <p className="text-purple-600 text-sm mt-1">{errors.email.message}</p>
+          <p className="text-green-600 text-sm mt-1">{errors.email.message}</p>
         )}
       </div>
 
@@ -113,12 +113,12 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
         </label>
         <Input
           id="names"
-          className=" py-6"
+          className="py-6"
           type="text"
           {...register("names")}
         />
         {errors.names && (
-          <p className="text-purple-600 text-sm mt-1">{errors.names.message}</p>
+          <p className="text-green-600 text-sm mt-1">{errors.names.message}</p>
         )}
       </div>
 
@@ -128,12 +128,12 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
         </label>
         <Input
           id="telephone"
-          className=" py-6"
+          className="py-6"
           type="text"
           {...register("telephone")}
         />
         {errors.telephone && (
-          <p className="text-purple-600 text-sm mt-1">
+          <p className="text-green-600 text-sm mt-1">
             {errors.telephone.message}
           </p>
         )}
@@ -145,20 +145,20 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
         </label>
         <Input
           id="password"
-          className=" py-6"
+          className="py-6"
           type={showPassword ? "text" : "password"}
           {...register("password")}
         />
         <button
           type="button"
           onClick={togglePasswordVisibility}
-          className="absolute right-3 top-[20px] text-gray-500  py-6"
+          className="absolute right-3 top-[20px] text-gray-500 py-6"
           tabIndex={-1}
         >
           {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
         </button>
         {errors.password && (
-          <p className="text-purple-600 text-sm mt-1">
+          <p className="text-green-600 text-sm mt-1">
             {errors.password.message}
           </p>
         )}
@@ -170,7 +170,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
         </label>
         <Input
           id="confirmPassword"
-          className=" py-6"
+          className="py-6"
           type={showConfirmPassword ? "text" : "password"}
           {...register("confirmPassword")}
         />
@@ -183,7 +183,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
           {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
         </button>
         {errors.confirmPassword && (
-          <p className="text-purple-600 text-sm mt-1">
+          <p className="text-green-600 text-sm mt-1">
             {errors.confirmPassword.message}
           </p>
         )}
@@ -192,14 +192,14 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
       <Button
         type="submit"
         disabled={isSubmitting}
-        className="w-full bg-gray-700 hover:bg-gray-800 py-6 focus:ring-purple-500"
+        className="w-full bg-green-600 hover:bg-green-300 py-6 focus:ring-green-500"
       >
         {isSubmitting ? "Registering..." : "Register"}
       </Button>
 
-      <p className="text-center  text-sm text-black">
+      <p className="text-center text-sm text-black">
         Already have an account?{" "}
-        <a href="/auth/login" className="text-purple-600 hover:underline">
+        <a href="/auth/login" className="text-green-600 hover:underline">
           Login here
         </a>
       </p>

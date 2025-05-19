@@ -35,8 +35,8 @@ const Navbar: React.FC = () => {
   }, []);
 
   return (
-    <nav className="w-full bg-white text-black px-6 py-4 flex justify-between">
-      <span className=" inline">Hello</span>
+    <nav className="w-full bg-green-200 text-green-500 px-6 py-4 flex justify-between">
+      <span className=" inline">Welcome to your dashboard</span>
 
       {user && (
         <div className="flex items-center space-x-4 justify-between">

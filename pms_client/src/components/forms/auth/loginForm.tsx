@@ -63,70 +63,84 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess }) => {
   };
 
   return (
-    <form
-      onSubmit={handleSubmit(onSubmit)}
-      className="w-full max-w-md mx-auto p-6 rounded space-y-6 bg-white text-black"
-    >
-      <div>
-        <h2 className="text-2xl font-bold">Login</h2>
-        <h1>Enter credentials to access your account</h1>
-      </div>
-
-      <div>
-        <label htmlFor="email" className="block mb-1 font-medium text-black">
-          Email
-        </label>
-        <Input
-          id="email"
-          type="email"
-          {...register("email")}
-          className="border-black focus:ring-purple-500 py-6"
-        />
-        {errors.email && (
-          <p className="text-purple-600 text-sm mt-1">{errors.email.message}</p>
-        )}
-      </div>
-
-      <div className="relative">
-        <label htmlFor="password" className="block mb-1 font-medium text-black">
-          Password
-        </label>
-        <Input
-          id="password"
-          type={showPassword ? "text" : "password"}
-          {...register("password")}
-          className="border-black focus:ring-purple-500 pr-10 py-6"
-        />
-        <button
-          type="button"
-          onClick={togglePasswordVisibility}
-          className="absolute right-3 top-11 text-gray-500"
-          tabIndex={-1}
-        >
-          {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-        </button>
-        {errors.password && (
-          <p className="text-black text-sm mt-1">{errors.password.message}</p>
-        )}
-      </div>
-
-      <Button
-        type="submit"
-        disabled={isSubmitting}
-        className="w-full bg-purple-700 hover:bg-purple-800 focus:ring-purple-500 py-6"
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
+      <form
+        onSubmit={handleSubmit(onSubmit)}
+        className="w-full max-w-md p-8 rounded-xl space-y-6 bg-white shadow-lg"
       >
-        {isSubmitting ? "Logging in..." : "Login"}
-      </Button>
+        <div className="text-center">
+          <h2 className="text-3xl font-extrabold text-gray-900 mb-2">
+            Welcome Back
+          </h2>
+          <p className="text-sm text-gray-600 mb-4">
+            Access your Vehicle Parking Management dashboard
+          </p>
+        </div>
 
-      <div className="flex justify-between text-sm text-black">
-        <a href="/auth/forgotPassword" className="text-black hover:underline">
-          Forgot password?
-        </a>
-        <a href="/auth/register" className="text-purple-600 hover:underline">
-          Register here
-        </a>
-      </div>
-    </form>
+        <div className="relative">
+          <Input
+            id="email"
+            type="email"
+            {...register("email")}
+            placeholder=" "
+            className="peer placeholder-transparent w-full border-b-2 border-gray-300 focus:border-green-500 outline-none py-2 text-gray-900"
+          />
+          <label
+            htmlFor="email"
+            className="absolute left-0 -top-5 text-sm text-green-600 peer-placeholder-shown:top-2 peer-placeholder-shown:text-gray-400 peer-placeholder-shown:text-base transition-all"
+          >
+            Email Address
+          </label>
+          {errors.email && (
+            <p className="text-red-600 text-sm mt-1">{errors.email.message}</p>
+          )}
+        </div>
+
+        <div className="relative">
+          <Input
+            id="password"
+            type={showPassword ? "text" : "password"}
+            {...register("password")}
+            placeholder=" "
+            className="peer placeholder-transparent w-full border-b-2 border-gray-300 focus:border-green-500 outline-none py-2 text-gray-900 pr-10"
+          />
+          <label
+            htmlFor="password"
+            className="absolute left-0 -top-5 text-sm text-green-600 peer-placeholder-shown:top-2 peer-placeholder-shown:text-gray-400 peer-placeholder-shown:text-base transition-all"
+          >
+            Password
+          </label>
+          <button
+            type="button"
+            onClick={togglePasswordVisibility}
+            className="absolute right-3 top-2 text-gray-500"
+            tabIndex={-1}
+          >
+            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+          </button>
+          {errors.password && (
+            <p className="text-red-600 text-sm mt-1">{errors.password.message}</p>
+          )}
+        </div>
+
+        <Button
+          type="submit"
+          disabled={isSubmitting}
+          className="w-full py-3 bg-green-600 text-white font-semibold rounded-md shadow-md hover:bg-green-700 transition"
+        >
+          {isSubmitting ? "Logging in..." : "Login"}
+        </Button>
+
+        <div className="flex justify-between text-sm text-gray-700">
+          <a href="/auth/forgotPassword" className="hover:underline">
+            Forgot password?
+          </a>
+          <a href="/auth/register" className="text-green-600 font-semibold hover:underline">
+            Register here
+          </a>
+        </div>
+      </form>
+    </div>
   );
 };
 

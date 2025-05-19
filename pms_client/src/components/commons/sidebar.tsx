@@ -32,7 +32,7 @@ const Sidebar: React.FC = () => {
 
   return (
     <>
-      <div className="lg:hidden flex justify-between items-center p-4 bg-white">
+      <div className="lg:hidden flex justify-between items-center p-4 bg-gree-200">
         <img src={logo} alt="Logo" className="h-10" />
         <button onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
           {isSidebarOpen ? <X size={28} /> : <Menu size={28} />}
@@ -41,7 +41,6 @@ const Sidebar: React.FC = () => {
 
       <aside
         className={`
-          fixed top-0 left-0 h-screen w-64 p-10 transition-transform transform 
           lg:translate-x-0 ${
             isSidebarOpen ? "translate-x-0" : "-translate-x-full"
           } 
@@ -50,10 +49,10 @@ const Sidebar: React.FC = () => {
       >
         <div className="mb-8 text-center">
           {/* <img src={logo} alt="Logo" className="h-20 mx-auto" /> */}
-          <h1 className="font-bold text-xl">NE P.M.S</h1>
+          <h1 className="font-bold text-xl text-green-600">ParkSphere</h1>
         </div>
 
-        <nav className="flex flex-col space-y-4">
+        <nav className="flex flex-col space-y-4 text-green-600">
           {navItems
             .filter((item) => item.roles.includes(userRole))
             .map((item) => (
@@ -61,8 +60,8 @@ const Sidebar: React.FC = () => {
                 key={item.name}
                 to={item.path}
                 className={({ isActive }) =>
-                  `block px-5 py-3 rounded-md hover:bg-purple-200 ${
-                    isActive ? "bg-purple-700 text-white font-semibold" : ""
+                  `block px-5 py-3 rounded-md hover:bg-green-300 ${
+                    isActive ? "bg-green-600 text-white font-semibold" : ""
                   }`
                 }
                 onClick={() => setIsSidebarOpen(false)}
@@ -76,7 +75,7 @@ const Sidebar: React.FC = () => {
           <Button
             variant="outline"
             onClick={confirmLogout}
-            className="w-full px-5 py-6 rounded-md border-2 text-black"
+            className="w-full px-5 py-6 rounded-md border-2 text-green-600"
           >
             Logout
           </Button>

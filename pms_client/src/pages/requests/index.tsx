@@ -110,7 +110,7 @@ const RequestPage: React.FC = () => {
   return (
     <div className="p-4">
       <div>
-        <h1 className="text-2xl font-semibold mb-4">
+        <h1 className="text-2xl text-green-700  font-semibold mb-4">
           {
             UserRole === "admin"
               ? "All Requests"
@@ -122,7 +122,7 @@ const RequestPage: React.FC = () => {
 
         {/* User Create Request */}
         {UserRole === "user" && (
-          <Button onClick={handleCreateRequest} className="mb-4 mr-2">
+          <Button onClick={handleCreateRequest} className="mb-4 mr-2 bg-green-800">
             Create Request
           </Button>
         )}

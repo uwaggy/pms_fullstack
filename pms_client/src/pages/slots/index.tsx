@@ -77,13 +77,13 @@ const  SlotsPage: React.FC = () => {
   return (
     <div className="p-4">
       <div>
-        <h1 className="text-2xl font-semibold mb-4">Slots</h1>
+        <h1 className="text-2xl font-semibold mb-4 text-green-700">Slots</h1>
 
         {/* User Create Vehicle */}
         {UserRole === "admin" && (
-          <Button onClick={handleCreateSlot} className="mb-4 mr-2">
+          <Button onClick={handleCreateSlot} className="mb-4 mr-2 bg-green-800">
             Create Slot
-          </Button>
+          </Button>   
         )}
       </div>
 
@@ -99,6 +99,7 @@ const  SlotsPage: React.FC = () => {
           onDelete={handleDelete}
           role={UserRole}
           tableType="slots"
+            
         />
       )}
 

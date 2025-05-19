@@ -80,7 +80,7 @@ const App: React.FC = () => {
           <Route
             path="overview"
             element={
-              <PrivateRoute allowedRoles={["ADMIN"]}>
+              <PrivateRoute  allowedRoles={["ADMIN"]}>
                 <DashboardPage />
               </PrivateRoute>
             }

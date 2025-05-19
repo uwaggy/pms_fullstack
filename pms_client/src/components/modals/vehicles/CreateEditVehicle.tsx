@@ -92,7 +92,7 @@ const CreateEditVehicle: React.FC<CreateEditVehicleProps> = ({
           <div>
             <label className="block mb-1">Color</label>
             <Input {...register("color", { required: true })} />
-            {errors.color && <p className="text-red-600">Color is required</p>}
+            {errors.color && <p className="text-green-600">Color is required</p>}
           </div>
           <DialogFooter>
             <Button type="submit" disabled={loading}>
