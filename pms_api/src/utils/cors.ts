@@ -1,6 +1,6 @@
 //whitelist is an array of allowed origins
 const whitelist = [
-    "http://localhost:4060",
+    "http://localhost:7070",
 ];
 const options = {
     origin: (origin: string, callback: Function) => {

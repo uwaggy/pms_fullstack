@@ -12,9 +12,13 @@ export interface Users {
 export interface Vehicle {
   id?: string;
   plateNumber: string;
-  color: string;
-  status?: string;
-  userId?: string;
+  parkingCode: string;
+  entryDateTime: string;
+  exitDateTime: string | null;
+  chargedAmount: number;
+  duration?: number;
+  ticketNumber?: string;
+  billNumber?: string;
 }
 
 export interface Requests {
@@ -24,12 +28,20 @@ export interface Requests {
   parkingSlotId?: string;
   checkIn?: string;
   checkOut?: string;
+  ticketNumber?: string;
+  billNumber?: string;
+  duration?: number;
+  chargedAmount?: number;
 }
 
 export interface Slots {
   id?: string;
-  slotNumber: number;
-  isAvailable: boolean;
+  code: string;
+  name: string;
+  location: string;
+  totalSpaces: number;
+  availableSpaces: number;
+  chargingFee: number;
 }
 
 //user columns 
@@ -63,8 +75,63 @@ export const vehicleColumns = (): ColumnDef<Vehicle>[] => [
     header: "Plate Number",
   },
   {
-    accessorKey: "color",
-    header: "Color",
+    accessorKey: "parkingCode",
+    header: "Parking Code",
+  },
+  {
+    accessorKey: "entryDateTime",
+    header: "Entry Date/Time",
+    cell: (info) => {
+      const value = info.getValue() as string;
+      if (!value) return "—";
+      const date = new Date(value);
+      return date.toLocaleString();
+    },
+  },
+  {
+    accessorKey: "exitDateTime",
+    header: "Exit Date/Time",
+    cell: (info) => {
+      const value = info.getValue() as string | null;
+      if (!value) return "—";
+      const date = new Date(value);
+      return date.toLocaleString();
+    },
+  },
+  {
+    accessorKey: "duration",
+    header: "Duration",
+    cell: (info) => {
+      const value = info.getValue() as number;
+      if (!value) return "—";
+      const hours = Math.floor(value / 60);
+      const minutes = value % 60;
+      return `${hours}h ${minutes}m`;
+    },
+  },
+  {
+    accessorKey: "chargedAmount",
+    header: "Charged Amount",
+    cell: (info) => {
+      const value = info.getValue() as number;
+      return `$${value.toFixed(2)}`;
+    },
+  },
+  {
+    accessorKey: "ticketNumber",
+    header: "Ticket Number",
+    cell: (info) => {
+      const value = info.getValue() as string;
+      return value || "—";
+    },
+  },
+  {
+    accessorKey: "billNumber",
+    header: "Bill Number",
+    cell: (info) => {
+      const value = info.getValue() as string;
+      return value || "—";
+    },
   },
 ];
 
@@ -140,17 +207,42 @@ export const requestColumns = (): ColumnDef<Requests>[] => [
 // SLOT COLUMNS
 export const slotColumns = (): ColumnDef<Slots>[] => [
   {
-    accessorKey: "slotNumber",
-    header: "Slot Number",
+    accessorKey: "code",
+    header: "Code",
   },
   {
-    accessorKey: "isAvailable",
-    header: "Available",
-    cell: (info) =>
-      info.getValue() ? (
-        <span className="text-green-600 font-medium">Yes</span>
-      ) : (
-        <span className="text-red-600 font-medium">No</span>
-      ),
+    accessorKey: "name",
+    header: "Name",
+  },
+  {
+    accessorKey: "location",
+    header: "Location",
+  },
+  {
+    accessorKey: "totalSpaces",
+    header: "Total Spaces",
+  },
+  {
+    accessorKey: "availableSpaces",
+    header: "Available Spaces",
+    cell: (info) => {
+      const value = info.getValue() as number;
+      return (
+        <span className={clsx(
+          "px-2 py-1 rounded-full text-sm font-medium",
+          value > 0 ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
+        )}>
+          {value}
+        </span>
+      );
+    },
+  },
+  {
+    accessorKey: "chargingFee",
+    header: "Charging Fee",
+    cell: (info) => {
+      const value = info.getValue() as number;
+      return `$${value.toFixed(2)}/hour`;
+    },
   },
 ];

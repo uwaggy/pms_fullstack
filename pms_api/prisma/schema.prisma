@@ -46,9 +46,9 @@ enum VehicleStatus {
 
 model User {
   id                   String              @id @default(uuid())
-  names                String
+  firstName            String              @map("first_name")
+  lastName             String              @map("last_name")
   email                String              @unique
-  telephone            String?             @unique
   password             String
   profilePicture       String              @default("https://firebasestorage.googleapis.com/v0/b/relaxia-services.appspot.com/o/relaxia-profiles%2Fblank-profile-picture-973460_960_720.webp?alt=media") @map("profile_picture")
   role                 Role                @default(USER)
@@ -61,51 +61,62 @@ model User {
   createdAt            DateTime            @default(now()) @map("created_at")
   updatedAt            DateTime            @updatedAt @map("updated_at")
 
-  vehicleRequests      ParkingRequest[]
   vehicles             Vehicle[]
+  parkingRequests      ParkingRequest[]
 
   @@map("users")
 }
 
 model Vehicle {
-  id          String        @id @default(uuid())
-  plateNumber String        @unique @map("plate_number")
-  color       String
-  status      VehicleStatus @default(PENDING)
-  userId      String        @map("user_id")
-  user        User          @relation(fields: [userId], references: [id])
-  createdAt   DateTime      @default(now()) @map("created_at")
-  updatedAt   DateTime      @updatedAt @map("updated_at")
-  vehicleRequests ParkingRequest[]
+  id            String    @id @default(uuid())
+  plateNumber   String    @unique @map("plate_number")
+  parkingCode   String    @map("parking_code")
+  entryDateTime DateTime  @map("entry_date_time")
+  exitDateTime  DateTime? @map("exit_date_time")
+  chargedAmount Float     @default(0) @map("charged_amount")
+  duration      Int?      @map("duration") // Duration in minutes
+  ticketNumber  String?   @unique @map("ticket_number")
+  billNumber    String?   @unique @map("bill_number")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  user          User      @relation(fields: [userId], references: [id])
+  userId        String    @map("user_id")
 
+  @@index([userId])
   @@map("vehicles")
 }
 
 model ParkingSlot {
-  id          String   @id @default(uuid())
-  slotNumber  Int      @unique @map("slot_number")
-  isAvailable Boolean  @default(true) @map("is_available")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-
+  id              String           @id @default(uuid())
+  code            String           @unique
+  name            String
+  location        String
+  totalSpaces     Int              @map("total_spaces")
+  availableSpaces Int              @map("available_spaces")
+  chargingFee     Float            @default(0) @map("charging_fee")
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
   parkingRequests ParkingRequest[]
 
   @@map("parking_slots")
 }
 
 model ParkingRequest {
-  id             String        @id @default(uuid())
-  userId         String        @map("user_id")
-  vehicleId      String        @map("vehicle_id")
-  parkingSlotId  String?       @map("parking_slot_id")
-  checkIn        DateTime      @default(now())@map("check_in")
-  checkOut       DateTime      @map("check_out")
-  status         RequestStatus @default(PENDING)
-  requestedAt    DateTime      @default(now()) @map("requested_at")
-  approvedAt     DateTime?     @map("approved_at")
-  user           User          @relation(fields: [userId], references: [id])
-  vehicle        Vehicle       @relation(fields: [vehicleId], references: [id])
-  parkingSlot    ParkingSlot?  @relation(fields: [parkingSlotId], references: [id])
+  id            String      @id @default(uuid())
+  plateNumber   String
+  parkingSlot   ParkingSlot @relation(fields: [parkingSlotId], references: [id])
+  parkingSlotId String
+  user          User        @relation(fields: [userId], references: [id])
+  userId        String      @map("user_id")
+  checkIn       DateTime    @default(now())
+  checkOut      DateTime?
+  chargedAmount Float       @default(0)
+  status        String      @default("PENDING")
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
 
-  @@map("parking_requests")
+  @@index([parkingSlotId])
+  @@index([userId])
+  
+  @@map("parking_requests") 
 }

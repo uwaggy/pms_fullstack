@@ -10,13 +10,6 @@ import {
 import { useForm } from "react-hook-form";
 import { Button } from "../../ui/button";
 import { Input } from "../../ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../../ui/select";
 import { createSlot, updateSlot } from "../../../services/slotService";
 
 interface CreateEditSlotProps {
@@ -24,15 +17,21 @@ interface CreateEditSlotProps {
   onOpenChange: (open: boolean) => void;
   slotToEdit?: {
     id?: string;
-    slotNumber: number;
-    isAvailable: boolean;
+    code: string;
+    name: string;
+    location: string;
+    totalSpaces: number;
+    chargingFee: number;
   } | null;
   onSuccess: () => void;
 }
 
 interface SlotFormData {
-  slotNumber: number;
-  isAvailable: "yes" | "no";
+  code: string;
+  name: string;
+  location: string;
+  totalSpaces: number;
+  chargingFee: number;
 }
 
 const CreateEditSlot: React.FC<CreateEditSlotProps> = ({
@@ -45,7 +44,6 @@ const CreateEditSlot: React.FC<CreateEditSlotProps> = ({
     register,
     handleSubmit,
     reset,
-    setValue,
     formState: { errors },
   } = useForm<SlotFormData>();
   const [loading, setLoading] = useState(false);
@@ -53,12 +51,19 @@ const CreateEditSlot: React.FC<CreateEditSlotProps> = ({
   useEffect(() => {
     if (slotToEdit) {
       reset({
-        slotNumber: slotToEdit.slotNumber,
-        isAvailable: slotToEdit.isAvailable ? "yes" : "no",
+        code: slotToEdit.code,
+        name: slotToEdit.name,
+        location: slotToEdit.location,
+        totalSpaces: slotToEdit.totalSpaces,
+        chargingFee: slotToEdit.chargingFee,
       });
     } else {
       reset({
-        isAvailable: "yes",
+        code: "",
+        name: "",
+        location: "",
+        totalSpaces: 1,
+        chargingFee: 0,
       });
     }
   }, [slotToEdit, reset]);
@@ -66,14 +71,10 @@ const CreateEditSlot: React.FC<CreateEditSlotProps> = ({
   const onSubmit = async (data: SlotFormData) => {
     setLoading(true);
     try {
-      const finalData = {
-        slotNumber: data.slotNumber,
-        isAvailable: data.isAvailable === "yes",
-      };
       if (slotToEdit) {
-        await updateSlot(slotToEdit.id || "", finalData);
+        await updateSlot(slotToEdit.id || "", data);
       } else {
-        await createSlot(finalData);
+        await createSlot(data);
       }
       onSuccess();
       onOpenChange(false);
@@ -89,34 +90,87 @@ const CreateEditSlot: React.FC<CreateEditSlotProps> = ({
       <DialogTrigger />
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{slotToEdit ? "Edit Slot" : "Create Slot"}</DialogTitle>
+          <DialogTitle>{slotToEdit ? "Edit Parking Slot" : "Create Parking Slot"}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>
-            <label className="block mb-1">Slot Number</label>
+            <label className="block mb-1">Code</label>
             <Input
-              type="number"
-              {...register("slotNumber", { required: true, valueAsNumber: true })}
+              {...register("code", { 
+                required: "Code is required",
+                minLength: { value: 3, message: "Code must be at least 3 characters" },
+                maxLength: { value: 10, message: "Code must not exceed 10 characters" }
+              })}
+              placeholder="Enter slot code"
             />
-            {errors.slotNumber && (
-              <p className="text-red-600">Slot Number is required</p>
+            {errors.code && (
+              <p className="text-red-600">{errors.code.message}</p>
             )}
           </div>
+
           <div>
-            <label className="block mb-1">Available</label>
-            <Select
-              value={slotToEdit ? (slotToEdit.isAvailable ? "yes" : "no") : "yes"}
-              onValueChange={(value) => setValue("isAvailable", value as "yes" | "no")}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select availability" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="yes">Yes</SelectItem>
-                <SelectItem value="no">No</SelectItem>
-              </SelectContent>
-            </Select>
+            <label className="block mb-1">Name</label>
+            <Input
+              {...register("name", { 
+                required: "Name is required",
+                minLength: { value: 2, message: "Name must be at least 2 characters" },
+                maxLength: { value: 50, message: "Name must not exceed 50 characters" }
+              })}
+              placeholder="Enter parking name"
+            />
+            {errors.name && (
+              <p className="text-red-600">{errors.name.message}</p>
+            )}
           </div>
+
+          <div>
+            <label className="block mb-1">Location</label>
+            <Input
+              {...register("location", { 
+                required: "Location is required",
+                minLength: { value: 2, message: "Location must be at least 2 characters" },
+                maxLength: { value: 100, message: "Location must not exceed 100 characters" }
+              })}
+              placeholder="Enter location"
+            />
+            {errors.location && (
+              <p className="text-red-600">{errors.location.message}</p>
+            )}
+          </div>
+
+          <div>
+            <label className="block mb-1">Total Spaces</label>
+            <Input
+              type="number"
+              {...register("totalSpaces", { 
+                required: "Total spaces is required",
+                min: { value: 1, message: "Total spaces must be at least 1" },
+                valueAsNumber: true
+              })}
+              placeholder="Enter number of spaces"
+            />
+            {errors.totalSpaces && (
+              <p className="text-red-600">{errors.totalSpaces.message}</p>
+            )}
+          </div>
+
+          <div>
+            <label className="block mb-1">Charging Fee (per hour)</label>
+            <Input
+              type="number"
+              step="0.01"
+              {...register("chargingFee", { 
+                required: "Charging fee is required",
+                min: { value: 0, message: "Charging fee must be at least 0" },
+                valueAsNumber: true
+              })}
+              placeholder="Enter charging fee"
+            />
+            {errors.chargingFee && (
+              <p className="text-red-600">{errors.chargingFee.message}</p>
+            )}
+          </div>
+
           <DialogFooter>
             <Button type="submit" disabled={loading}>
               {loading ? "Saving..." : "Save"}

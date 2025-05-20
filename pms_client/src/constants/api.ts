@@ -1,44 +1,54 @@
-const API_BASE_URL = import.meta.env.VITE_BACKEND_URL;
+export const API_BASE_URL = "http://localhost:7070/api";
 
 export const API_ENDPOINTS = {
   auth: {
-    login: `${API_BASE_URL}/auth/login`,
-    register: `${API_BASE_URL}/user/create`,
-    verifyAccountInitiate: `${API_BASE_URL}/auth/initiate-email-verification`,
-    verifyAccountConfirm: (code: string) =>
-      `${API_BASE_URL}/auth/verify-email/${code}`,
-    resetPasswordInitiate: `${API_BASE_URL}/auth/initiate-reset-password`,
-    resetPasswordConfirm: `${API_BASE_URL}/auth/reset-password`,
+    login: "/auth/login",
+    register: "/auth/register",
+    verifyAccountInitiate: "/auth/verify-account/initiate",
+    verifyAccountConfirm: (code: string) => `/auth/verify-account/confirm/${code}`,
+    resetPasswordInitiate: "/auth/reset-password/initiate",
+    resetPasswordConfirm: "/auth/reset-password/confirm",
+    me: "/auth/me",
   },
-  user: {
-    me: `${API_BASE_URL}/user/me`,
-    all: `${API_BASE_URL}/user/all`,
+  users: {
+    all: "/users",
+    search: "/users/search",
+    update: "/users/update",
+    updatePassword: "/users/update-password",
+    updateAvatar: "/users/update-avatar",
+    removeAvatar: "/users/remove-avatar",
   },
-  vehicle:{
-    all: `${API_BASE_URL}/vehicles/getMyVehicles`,
-    create: `${API_BASE_URL}/vehicles`,
-    update: (id: string) => `${API_BASE_URL}/vehicles/${id}`,
-    delete: (id: string) => `${API_BASE_URL}/vehicles/${id}`,
-    getById: (id: string) => `${API_BASE_URL}/vehicles/${id}`,
+  vehicles: {
+    all: "/vehicles",
+    create: "/vehicles",
+    getById: (id: string) => `/vehicles/${id}`,
+    update: (id: string) => `/vehicles/${id}`,
+    delete: (id: string) => `/vehicles/${id}`,
+    recordExit: (id: string) => `/vehicles/${id}/exit`,
+    generateTicket: (id: string) => `/vehicles/${id}/ticket`,
+    generateBill: (id: string) => `/vehicles/${id}/bill`,
+    history: (id: string) => `/vehicles/${id}/history`,
   },
-  parkingRequests:{
-    mine: `${API_BASE_URL}/parkingRequests/myRequests`,
-    all: `${API_BASE_URL}/parkingRequests/allRequests`,
-    create: `${API_BASE_URL}/parkingRequests`,
-    update: (id: string) => `${API_BASE_URL}/parkingRequests/${id}`,
-    delete: (id: string) => `${API_BASE_URL}/parkingRequests/${id}`,
-    getById: (id: string) => `${API_BASE_URL}/parkingRequests/${id}`,
-    approve: (id: string) => `${API_BASE_URL}/parkingRequests/approve/${id}`,
-    reject: (id: string) => `${API_BASE_URL}/parkingRequests/reject/${id}`,
+  parkingSlots: {
+    all: "/parking-slots",
+    create: "/parking-slots",
+    getById: (id: string) => `/parking-slots/${id}`,
+    update: (id: string) => `/parking-slots/${id}`,
+    delete: (id: string) => `/parking-slots/${id}`,
+    available: "/parking-slots/available",
+    active: "/parking-slots/active",
   },
-  parkingSlots:{
-    all: `${API_BASE_URL}/parkingSlots`,
-    create: `${API_BASE_URL}/parkingSlots`,
-    update: (id: string) => `${API_BASE_URL}/parkingSlots/${id}`,
-    delete: (id: string) => `${API_BASE_URL}/parkingSlots/${id}`,
-    getById: (id: string) => `${API_BASE_URL}/parkingSlots/${id}`,
-    available:`${API_BASE_URL}/parkingSlots/available`,
-  }
+  parkingRequests: {
+    all: "/parking-requests",
+    create: "/parking-requests",
+    entry: "/parking-requests/entry",
+    exit: "/parking-requests/exit",
+    getById: (id: string) => `/parking-requests/${id}`,
+    update: (id: string) => `/parking-requests/${id}`,
+    delete: (id: string) => `/parking-requests/${id}`,
+    approve: (id: string) => `/parking-requests/${id}/approve`,
+    reject: (id: string) => `/parking-requests/${id}/reject`,
+  },
 };
 
 export default API_ENDPOINTS;

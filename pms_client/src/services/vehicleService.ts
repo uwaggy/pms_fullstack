@@ -1,99 +1,48 @@
-import axios from "axios";
-import API_ENDPOINTS from "../constants/api";
+import axiosInstance from "../lib/axios";
+import { Vehicle } from "../pages/vehicles/columns";
 import { toast } from "sonner";
-import { Vehicle } from "@/components/tables/columns";
 
-export async function getAllVehicles() {
-  try {
-    const response = await axios.get(API_ENDPOINTS.vehicle.all, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-    });
-    toast.success("Vehicles loaded successfully");
-    return response.data;
-  } catch (error) {
-    const errorMessage =
-      axios.isAxiosError(error) && error.response?.data?.message
-        ? error.response.data.message
-        : "Failed to load vehicles";
-    toast.error(errorMessage);
-    throw error;
-  }
-}
+export const getAllVehicles = async () => {
+  const response = await axiosInstance.get("/vehicles");
+  toast.success("Vehicles loaded successfully");
+  return response.data;
+};
 
-export async function createVehicle(vehicleData: Vehicle) {
-  try {
-    const response = await axios.post(API_ENDPOINTS.vehicle.create, vehicleData, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-    });
-    toast.success("Vehicle created successfully");
-    return response.data;
-  } catch (error) {
-    const errorMessage =
-      axios.isAxiosError(error) && error.response?.data?.message
-        ? error.response.data.message
-        : "Failed to create vehicle";
-    toast.error(errorMessage);
-    throw error;
-  }
-}
+export const getVehicleById = async (id: string) => {
+  const response = await axiosInstance.get(`/vehicles/${id}`);
+  return response.data;
+};
 
-export async function updateVehicle(id: string, updateData: Partial<{
-  plateNumber: string;
-  color: string;
-  status?: string;
-  userId: string;
-}>) {
-  try {
-    const response = await axios.put(API_ENDPOINTS.vehicle.update(id), updateData, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-    });
-    toast.success("Vehicle updated successfully");
-    return response.data;
-  } catch (error) {
-    const errorMessage =
-      axios.isAxiosError(error) && error.response?.data?.message
-        ? error.response.data.message
-        : "Failed to update vehicle";
-    toast.error(errorMessage);
-    throw error;
-  }
-}
+export const createVehicle = async (vehicleData: Partial<Vehicle>) => {
+  const response = await axiosInstance.post("/vehicles", vehicleData);
+  toast.success("Vehicle entry recorded successfully");
+  return response.data;
+};
 
-export async function deleteVehicle(id: string) {
-  try {
-    const response = await axios.delete(API_ENDPOINTS.vehicle.delete(id), {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-    });
-    toast.success("Vehicle deleted successfully");
-    return response.data;
-  } catch (error) {
-    const errorMessage =
-      axios.isAxiosError(error) && error.response?.data?.message
-        ? error.response.data.message
-        : "Failed to delete vehicle";
-    toast.error(errorMessage);
-    throw error;
-  }
-}
+export const updateVehicle = async (id: string, vehicleData: Partial<Vehicle>) => {
+  const response = await axiosInstance.put(`/vehicles/${id}`, vehicleData);
+  toast.success("Vehicle record updated successfully");
+  return response.data;
+};
 
-export async function getVehicleById(id: string) {
-  try {
-    const response = await axios.get(API_ENDPOINTS.vehicle.getById(id), {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-    });
-    return response.data;
-  } catch (error) {
-    console.error("Failed to get vehicle by ID", error);
-    throw error;
-  }
-}
+export const deleteVehicle = async (id: string) => {
+  const response = await axiosInstance.delete(`/vehicles/${id}`);
+  toast.success("Vehicle record deleted successfully");
+  return response.data;
+};
+
+export const recordVehicleExit = async (id: string, chargedAmount: number) => {
+  const response = await axiosInstance.post(`/vehicles/${id}/exit`, { chargedAmount });
+  toast.success("Vehicle exit recorded successfully");
+  return response.data;
+};
+
+export const generateTicket = async (id: string) => {
+  const response = await axiosInstance.get(`/vehicles/${id}/ticket`);
+  return response.data;
+};
+
+export const generateBill = async (id: string) => {
+  const response = await axiosInstance.get(`/vehicles/${id}/bill`);
+  return response.data;
+};

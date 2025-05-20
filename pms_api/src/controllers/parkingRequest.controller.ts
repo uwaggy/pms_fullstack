@@ -1,172 +1,388 @@
 import { Request, Response } from "express";
 import prisma from "../../prisma/prisma-client";
+import ServerResponse from "../utils/ServerResponse";
+import { AuthRequest } from "../types";
 import { CreateParkingRequestDTO, UpdateParkingRequestDTO } from "../dtos/parkingRequest.dto";
 import { validate } from "class-validator";
 import { plainToInstance } from "class-transformer";
 import { sendParkingSlotConfirmationEmail, sendRejectionEmail } from "../utils/mail";
 
-//Converts incoming data (req.body) into a CreateParkingRequestDTO instance and validates it using class-validator.
-//If validation fails, return a 400 error with the validation errors.
-const createParkingRequest = async (req: Request, res: Response) => {
-    const dto = plainToInstance(CreateParkingRequestDTO, req.body);
-    const errors = await validate(dto);
-    if (errors.length > 0) {
-        return res.status(400).json({ errors });
+// Register car entry
+const registerCarEntry = async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.user) {
+      return ServerResponse.error(res, "User not authenticated", 401);
     }
 
-    try {
-        // Check if vehicle belongs to  authenticated user
-        const vehicle = await prisma.vehicle.findUnique({
-            where: { id: dto.vehicleId },
-        });
-        if (!vehicle || vehicle.userId !== (req as any).user.id) {
-            return res.status(403).json({ message: "Unauthorized vehicle" });
-        }
+    const { plateNumber, parkingCode } = req.body;
 
-        // Inserts a new parkingRequest record into the database with status PENDING, the current user ID, vehicle ID, and checkIn/checkOut times.
-        const parkingRequest = await prisma.parkingRequest.create({
-            data: {
-                userId: (req as any).user.id,
-                vehicleId: dto.vehicleId,
-                checkIn: new Date(dto.checkIn),
-                checkOut: new Date(dto.checkOut),
-                status: "PENDING",
-            },
-        });
+    // Find parking slot by code
+    const parkingSlot = await prisma.parkingSlot.findUnique({
+      where: { code: parkingCode },
+    });
 
-        return res.status(201).json(parkingRequest);
-    } catch (error) {
-        return res.status(500).json({ message: "Failed to create parking request", error });
+    if (!parkingSlot) {
+      return ServerResponse.error(res, "Parking slot not found", 404);
     }
+
+    if (parkingSlot.availableSpaces <= 0) {
+      return ServerResponse.error(res, "No available spaces", 400);
+    }
+
+    // Check if car is already parked
+    const existingParking = await prisma.parkingRequest.findFirst({
+      where: {
+        plateNumber,
+        checkOut: null,
+      },
+    });
+
+    if (existingParking) {
+      return ServerResponse.error(res, "Car is already parked", 400);
+    }
+
+    // Create parking request
+    const parkingRequest = await prisma.parkingRequest.create({
+      data: {
+        plateNumber,
+        parkingSlotId: parkingSlot.id,
+        userId: req.user.id,
+        checkIn: new Date(),
+        chargedAmount: 0,
+        status: "PENDING",
+      },
+    });
+
+    // Update available spaces
+    await prisma.parkingSlot.update({
+      where: { id: parkingSlot.id },
+      data: {
+        availableSpaces: parkingSlot.availableSpaces - 1,
+      },
+    });
+
+    return ServerResponse.created(res, "Car entry registered successfully", { parkingRequest });
+  } catch (error) {
+    console.error("Error registering car entry:", error);
+    return ServerResponse.error(res, "Error occurred", { error });
+  }
 };
 
-//Fetches parking requests where the userId matches the current user
-//Related parkingSlot and vehicle are joined in the query.
-const getUserParkingRequests = async (req: Request, res: Response) => {
-    try {
-        const requests = await prisma.parkingRequest.findMany({
-            where: { userId: (req as any).user.id },
-            include: { parkingSlot: true, vehicle: true },
-        });
-        return res.status(200).json(requests);
-    } catch (error) {
-        return res.status(500).json({ message: "Failed to fetch parking requests", error });
+// Register car exit
+const registerCarExit = async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.user) {
+      return ServerResponse.error(res, "User not authenticated", 401);
     }
+
+    const { plateNumber, parkingCode } = req.body;
+
+    // Find parking slot by code
+    const parkingSlot = await prisma.parkingSlot.findUnique({
+      where: { code: parkingCode },
+    });
+
+    if (!parkingSlot) {
+      return ServerResponse.error(res, "Parking slot not found", 404);
+    }
+
+    // Find active parking request
+    const parkingRequest = await prisma.parkingRequest.findFirst({
+      where: {
+        plateNumber,
+        parkingSlotId: parkingSlot.id,
+        checkOut: null,
+      },
+    });
+
+    if (!parkingRequest) {
+      return ServerResponse.error(res, "No active parking request found", 404);
+    }
+
+    // Calculate duration and charge
+    const checkOut = new Date();
+    const duration = (checkOut.getTime() - parkingRequest.checkIn.getTime()) / (1000 * 60 * 60); // in hours
+    const chargedAmount = Number((duration * parkingSlot.chargingFee).toFixed(2));
+
+    // Update parking request
+    const updatedRequest = await prisma.parkingRequest.update({
+      where: { id: parkingRequest.id },
+      data: {
+        checkOut,
+        chargedAmount,
+        status: "APPROVED",
+      },
+    });
+
+    // Update available spaces
+    await prisma.parkingSlot.update({
+      where: { id: parkingSlot.id },
+      data: {
+        availableSpaces: parkingSlot.availableSpaces + 1,
+      },
+    });
+
+    return ServerResponse.success(res, "Car exit registered successfully", {
+      parkingRequest: updatedRequest,
+      duration: duration.toFixed(2),
+      chargedAmount,
+    });
+  } catch (error) {
+    console.error("Error registering car exit:", error);
+    return ServerResponse.error(res, "Error occurred", { error });
+  }
 };
 
-
-//Retrieves all parking requests and Fetches associated parkingSlot, vehicle, and user info.
+// Get all parking requests
 const getAllParkingRequests = async (req: Request, res: Response) => {
-    try {
-        const requests = await prisma.parkingRequest.findMany({
-            include: { parkingSlot: true, vehicle: true, user: true },
-        });
-        return res.status(200).json(requests);
-    } catch (error) {
-        return res.status(500).json({ message: "Failed to fetch parking requests", error });
-    }
+  try {
+    const parkingRequests = await prisma.parkingRequest.findMany({
+      include: {
+        parkingSlot: true,
+        user: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+          },
+        },
+      },
+      orderBy: {
+        checkIn: 'desc',
+      },
+    });
+
+    return ServerResponse.success(res, "Parking requests fetched successfully", { parkingRequests });
+  } catch (error) {
+    console.error("Error fetching parking requests:", error);
+    return ServerResponse.error(res, "Error occurred", { error });
+  }
 };
 
-//Look up the request by ID. If not found, return 404.Ensure it’s still PENDING. Otherwise, return 400
+// Get parking requests by date range
+const getParkingRequestsByDateRange = async (req: Request, res: Response) => {
+  try {
+    const { startDate, endDate } = req.body;
 
-const approveParkingRequest = async (req: Request, res: Response) => {
-    const { id } = req.params;
-    try {
-        const request = await prisma.parkingRequest.findUnique({
-            where: { id },
-            include: { parkingSlot: true },
-        });
-        if (!request) {
-            return res.status(404).json({ message: "Request not found" });
-        }
-        if (request.status !== "PENDING") {
-            return res.status(400).json({ message: "Request already processed" });
-        }
+    const parkingRequests = await prisma.parkingRequest.findMany({
+      where: {
+        checkIn: {
+          gte: new Date(startDate),
+          lte: new Date(endDate),
+        },
+      },
+      include: {
+        parkingSlot: true,
+        user: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+          },
+        },
+      },
+      orderBy: {
+        checkIn: 'desc',
+      },
+    });
 
-        //Search for any parkingSlot where isAvailable is true.
-//If none available, return a 400 message
-        const availableSlot = await prisma.parkingSlot.findFirst({
-            where: { isAvailable: true },
-        });
-        if (!availableSlot) {
-            return res.status(400).json({ message: "No available parking slots" });
-        }
+    const totalCharged = parkingRequests.reduce((sum, request) => sum + request.chargedAmount, 0);
+    const activeParkings = parkingRequests.filter(request => !request.checkOut);
+    const completedParkings = parkingRequests.filter(request => request.checkOut);
 
-        // Search for any parkingSlot where isAvailable is true.
-//If none available, return a 400 message then send an verifcation email
-        await prisma.parkingRequest.update({
-            where: { id },
-            data: {
-                status: "APPROVED",
-                approvedAt: new Date(),
-                parkingSlotId: availableSlot.id,
-            },
-        });
-
-        //Retrieve the user and send them a confirmation email with the slot number.
-        const user = await prisma.user.findUnique({
-            where: { id: request.userId },
-        });
-        if (user) {
-            await sendParkingSlotConfirmationEmail(user.email,user.names, availableSlot.slotNumber);
-        }
-    
-
-        // Mark slot as unavailable
-        await prisma.parkingSlot.update({
-            where: { id: availableSlot.id },
-            data: { isAvailable: false },
-        });
-
-        return res.status(200).json({ message: "Request approved", slotNumber: availableSlot.slotNumber });
-    } catch (error) {
-        return res.status(500).json({ message: "Error approving request", error });
-    }
+    return ServerResponse.success(res, "Parking requests fetched successfully", {
+      parkingRequests,
+      summary: {
+        totalEntries: parkingRequests.length,
+        activeEntries: activeParkings.length,
+        completedEntries: completedParkings.length,
+        totalRevenue: totalCharged,
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching parking requests by date range:", error);
+    return ServerResponse.error(res, "Error occurred", { error });
+  }
 };
 
+// Get active parking requests
+const getActiveParkingRequests = async (req: Request, res: Response) => {
+  try {
+    const activeParkings = await prisma.parkingRequest.findMany({
+      where: {
+        checkOut: null,
+      },
+      include: {
+        parkingSlot: true,
+        user: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+          },
+        },
+      },
+      orderBy: {
+        checkIn: 'desc',
+      },
+    });
 
+    return ServerResponse.success(res, "Active parking requests fetched successfully", { activeParkings });
+  } catch (error) {
+    console.error("Error fetching active parking requests:", error);
+    return ServerResponse.error(res, "Error occurred", { error });
+  }
+};
 
-//Retrieve by ID Return 404 if not found Ensure it’s still PENDING If not, return 400 Set status to REJECTED.
-const rejectParkingRequest = async (req: Request, res: Response) => {
+// Get parking request by ID
+const getParkingRequestById = async (req: Request, res: Response) => {
+  try {
     const { id } = req.params;
-    try {
-        const request = await prisma.parkingRequest.findUnique({
-            where: { id },
-        });
-        if (!request) {
-            return res.status(404).json({ message: "Request not found" });
-        }
-        if (request.status !== "PENDING") {
-            return res.status(400).json({ message: "Request already processed" });
-        }
 
-        await prisma.parkingRequest.update({
-            where: { id },
-            data: {
-                status: "REJECTED",
-            },
-        });
+    const parkingRequest = await prisma.parkingRequest.findUnique({
+      where: { id },
+      include: {
+        parkingSlot: true,
+        user: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+          },
+        },
+      },
+    });
 
-        //send rejection email to user
-        const user = await prisma.user.findUnique({
-            where: { id: request.userId },
-        });
-        if (user) {
-            await sendRejectionEmail(user.email, user.names);
-        }
-
-        return res.status(200).json({ message: "Request rejected" });
-    } catch (error) {
-        return res.status(500).json({ message: "Error rejecting request", error });
+    if (!parkingRequest) {
+      return ServerResponse.error(res, "Parking request not found", 404);
     }
+
+    return ServerResponse.success(res, "Parking request fetched successfully", { parkingRequest });
+  } catch (error) {
+    console.error("Error fetching parking request:", error);
+    return ServerResponse.error(res, "Error occurred", { error });
+  }
+};
+
+// Update parking request
+const updateParkingRequest = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    const parkingRequest = await prisma.parkingRequest.findUnique({
+      where: { id },
+      include: {
+        parkingSlot: true,
+      },
+    });
+
+    if (!parkingRequest) {
+      return ServerResponse.error(res, "Parking request not found", 404);
+    }
+
+    const updatedRequest = await prisma.parkingRequest.update({
+      where: { id },
+      data: {
+        status,
+        checkOut: status === "APPROVED" ? new Date() : null,
+      },
+    });
+
+    // If request is approved, update available spaces
+    if (status === "APPROVED") {
+      await prisma.parkingSlot.update({
+        where: { id: parkingRequest.parkingSlotId },
+        data: {
+          availableSpaces: parkingRequest.parkingSlot.availableSpaces + 1,
+        },
+      });
+    }
+
+    return ServerResponse.success(res, "Parking request updated successfully", { parkingRequest: updatedRequest });
+  } catch (error) {
+    console.error("Error updating parking request:", error);
+    return ServerResponse.error(res, "Error occurred", { error });
+  }
+};
+
+// Delete parking request
+const deleteParkingRequest = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const parkingRequest = await prisma.parkingRequest.findUnique({
+      where: { id },
+      include: {
+        parkingSlot: true,
+      },
+    });
+
+    if (!parkingRequest) {
+      return ServerResponse.error(res, "Parking request not found", 404);
+    }
+
+    // If the request is active, update available spaces
+    if (!parkingRequest.checkOut) {
+      await prisma.parkingSlot.update({
+        where: { id: parkingRequest.parkingSlotId },
+        data: {
+          availableSpaces: parkingRequest.parkingSlot.availableSpaces + 1,
+        },
+      });
+    }
+
+    await prisma.parkingRequest.delete({
+      where: { id },
+    });
+
+    return ServerResponse.success(res, "Parking request deleted successfully");
+  } catch (error) {
+    console.error("Error deleting parking request:", error);
+    return ServerResponse.error(res, "Error occurred", { error });
+  }
+};
+
+// Get user's parking requests
+const getUserParkingRequests = async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.user) {
+      return ServerResponse.error(res, "User not authenticated", 401);
+    }
+
+    const parkingRequests = await prisma.parkingRequest.findMany({
+      where: {
+        userId: req.user.id,
+      },
+      include: {
+        parkingSlot: true,
+      },
+      orderBy: {
+        checkIn: 'desc',
+      },
+    });
+
+    return ServerResponse.success(res, "User's parking requests fetched successfully", { parkingRequests });
+  } catch (error) {
+    console.error("Error fetching user's parking requests:", error);
+    return ServerResponse.error(res, "Error occurred", { error });
+  }
 };
 
 const parkingRequestController = {
-    createParkingRequest,
-    getUserParkingRequests,
-    getAllParkingRequests,
-    approveParkingRequest,
-    rejectParkingRequest,
+  registerCarEntry,
+  registerCarExit,
+  getAllParkingRequests,
+  getParkingRequestsByDateRange,
+  getActiveParkingRequests,
+  getParkingRequestById,
+  updateParkingRequest,
+  deleteParkingRequest,
+  getUserParkingRequests,
 };
 
 export default parkingRequestController;

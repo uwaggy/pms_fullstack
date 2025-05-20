@@ -1,18 +1,16 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
 import DataTable from "../../components/tables";
 import {
   slotColumns,
   Slots,
 } from "../../components/tables/columns";
-import API_ENDPOINTS from "../../constants/api";
 import { Button } from "../../components/ui/button";
 import { toast } from "sonner";
 import Loader from "../../components/commons/loader";
-import { deleteSlot } from "../../services/slotService";
+import { deleteSlot, getAllSlots } from "../../services/slotService";
 import CreateEditSlot from "../../components/modals/slot/createEditSlot";
 
-const  SlotsPage: React.FC = () => {
+const SlotsPage: React.FC = () => {
   const [slots, setSlots] = useState<Slots[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -27,19 +25,14 @@ const  SlotsPage: React.FC = () => {
     setError(null);
 
     try {
-      const token = localStorage.getItem("token");
-      const response = await axios.get(API_ENDPOINTS.parkingSlots.all, {
-        headers: {
-          Authorization: token ? `Bearer ${token}` : "",
-        },
-      });
-
-      const { data } = response.data;
-      console.log("Fetched slots:", data);
-      setSlots(data);
+      const response = await getAllSlots();
+      const { data: { parkingSlots } } = response;
+      console.log("Fetched slots:", parkingSlots);
+      setSlots(parkingSlots);
     } catch (err) {
-      console.error("Vehicle fetch error:", err);
-      setError("Failed to fetch vehicles");
+      console.error("Slots fetch error:", err);
+      setError("Failed to fetch slots");
+      toast.error("Failed to fetch slots");
     } finally {
       setLoading(false);
     }
@@ -54,7 +47,6 @@ const  SlotsPage: React.FC = () => {
     setSelectedSlot(null);
     setIsDialogOpen(true);
   };
-
 
   const handleDelete = async (slot: Slots) => {
     try {
@@ -79,7 +71,7 @@ const  SlotsPage: React.FC = () => {
       <div>
         <h1 className="text-2xl font-semibold mb-4 text-green-700">Slots</h1>
 
-        {/* User Create Vehicle */}
+        {/* Admin Create Slot */}
         {UserRole === "admin" && (
           <Button onClick={handleCreateSlot} className="mb-4 mr-2 bg-green-800">
             Create Slot
@@ -99,7 +91,6 @@ const  SlotsPage: React.FC = () => {
           onDelete={handleDelete}
           role={UserRole}
           tableType="slots"
-            
         />
       )}
 

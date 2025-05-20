@@ -1,114 +1,92 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
-import DataTable from "../../components/tables";
-import {
-  vehicleColumns as getVehicleColumns,
-  Vehicle,
-} from "../../components/tables/columns";
-import API_ENDPOINTS from "../../constants/api";
-import CreateEditVehicle from "../../components/modals/vehicles/CreateEditVehicle";
+import { useNavigate } from "react-router-dom";
 import { Button } from "../../components/ui/button";
-import { deleteVehicle } from "../../services/vehicleService";
-import { toast } from "sonner";
-import Loader from "../../components/commons/loader";
+import { Plus, Car, ParkingCircle } from "lucide-react";
+import { DataTable } from "../../components/ui/data-table";
+import { columns } from "./columns";
+import { useVehicles } from "../../hooks/useVehicles";
+import { useAuth } from "../../contexts/AuthContext";
+import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
+import { BillsTicketsTab } from "../../components/tabs/BillsTicketsTab";
+// import { toast } from "sonner";
 
-const VehiclePage: React.FC = () => {
-  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
-  const user = localStorage.getItem("user");
-  const parsedUser = user ? JSON.parse(user) : {};
-  const UserRole = parsedUser.role?.toLowerCase();
-
-  const fetchVehicles = async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const token = localStorage.getItem("token");
-      const response = await axios.get(API_ENDPOINTS.vehicle.all, {
-        headers: {
-          Authorization: token ? `Bearer ${token}` : "",
-        },
-      });
-
-      const { data } = response;
-      setVehicles(data);
-    } catch (err) {
-      console.error("Vehicle fetch error:", err);
-      setError("Failed to fetch vehicles");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleEdit = (vehicle: Vehicle) => {
-    setSelectedVehicle(vehicle);
-    setIsDialogOpen(true);
-  };
-
-  const handleCreateVehicle = () => {
-    setSelectedVehicle(null);
-    setIsDialogOpen(true);
-  };
-
-
-  const handleDelete = async (vehicle: Vehicle) => {
-    try {
-      await deleteVehicle(vehicle.id || "");
-      toast.success("Vehicle deleted successfully");
-      fetchVehicles();
-    } catch {
-      toast.error("Failed to delete vehicle");
-    }
-  };
-
-  const handleSuccess = () => {
-    fetchVehicles();
-  };
+export default function VehiclesPage() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { vehicles, loading, error, refetch } = useVehicles();
+  const [totalSpaces, setTotalSpaces] = useState(100); // Example total spaces
+  const [occupiedSpaces, setOccupiedSpaces] = useState(0);
 
   useEffect(() => {
-    fetchVehicles();
-  }, []);
+    if (vehicles) {
+      // Calculate occupied spaces (vehicles that have entered but not exited)
+      const occupied = vehicles.filter(v => v.entryDateTime && !v.exitDateTime).length;
+      setOccupiedSpaces(occupied);
+    }
+  }, [vehicles]);
+
+  const handleSpaceUpdate = () => {
+    refetch(); // Refresh vehicle data to update space counts
+  };
+
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error.message}</div>;
 
   return (
-    <div className="p-4">
-      <div>
-        <h1 className="text-2xl font-semibold mb-4 text-green-700">Vehicles</h1>
-
-        {/* User Create Vehicle */}
-        {UserRole === "user" && (
-          <Button onClick={handleCreateVehicle} className="mb-4 mr-2 bg-green-800">
-            Create Vehicle
-          </Button>
-        )}
+    <div className="container mx-auto py-10">
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold text-green-700">Vehicle Management</h1>
+        <Button
+          onClick={() => navigate("/vehicles/create")}
+          className="bg-green-600 hover:bg-green-700"
+        >
+          <Plus className="mr-2 h-4 w-4" />
+          Register Vehicle
+        </Button>
       </div>
 
-      {error && <p className="text-red-600 mb-4">{error}</p>}
+      {/* Parking Space Status */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-8">
+        <Card className="border-green-200">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 bg-green-50">
+            <CardTitle className="text-sm font-medium text-green-700">Total Spaces</CardTitle>
+            <ParkingCircle className="h-4 w-4 text-green-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-700">{totalSpaces}</div>
+          </CardContent>
+        </Card>
 
-      {loading ? (
-        <Loader />
-      ) : (
-        <DataTable<Vehicle>
-          data={vehicles}
-          columns={getVehicleColumns()}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-          role={UserRole}
-          tableType="vehicle"
-        />
-      )}
+        <Card className="border-green-200">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 bg-green-50">
+            <CardTitle className="text-sm font-medium text-green-700">Occupied Spaces</CardTitle>
+            <Car className="h-4 w-4 text-green-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-700">{occupiedSpaces}</div>
+          </CardContent>
+        </Card>
 
-      <CreateEditVehicle
-        isOpen={isDialogOpen}
-        vehicleToEdit={selectedVehicle}
-        onOpenChange={setIsDialogOpen}
-        onSuccess={handleSuccess}
-      />
+        <Card className="border-green-200">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 bg-green-50">
+            <CardTitle className="text-sm font-medium text-green-700">Available Spaces</CardTitle>
+            <ParkingCircle className="h-4 w-4 text-green-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-700">{totalSpaces - occupiedSpaces}</div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Bills and Tickets Tab */}
+      <div className="mb-8">
+        <BillsTicketsTab vehicles={vehicles} onSpaceUpdate={handleSpaceUpdate} />
+      </div>
+
+      {/* Vehicles Table */}
+      <div className="bg-white rounded-lg shadow">
+        <DataTable columns={columns} data={vehicles} />
+      </div>
     </div>
   );
-};
-
-export default VehiclePage;
+}

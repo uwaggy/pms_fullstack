@@ -2,18 +2,19 @@ import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import axios from "axios";
 import { toast } from "sonner";
 import { Eye, EyeOff } from "lucide-react";
 import { Button } from "../../../components/ui/button";
 import API_ENDPOINTS from "../../../constants/api";
 import { Input } from "../../../components/ui/input";
+import { axiosInstance } from "../../../lib/axios";
 
 const registerSchema = z
   .object({
     email: z.string().email({ message: "Invalid email address" }),
-    names: z.string().min(1, { message: "Names is required" }),
-    telephone: z.string().min(1, { message: "Telephone is required" }),
+    firstName: z.string().min(1, { message: "First name is required" }),
+    lastName: z.string().min(1, { message: "Last name is required" }),
+    balance: z.number().min(0, { message: "Balance must be 0 or greater" }).optional(),
     password: z
       .string()
       .min(6, { message: "Password must be at least 6 characters" }),
@@ -54,10 +55,11 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
 
   const onSubmit = async (data: RegisterFormInputs) => {
     try {
-      const response = await axios.post(API_ENDPOINTS.auth.register, {
+      const response = await axiosInstance.post(API_ENDPOINTS.auth.register, {
         email: data.email,
-        names: data.names,
-        telephone: data.telephone,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        balance: data.balance || 0,
         password: data.password,
       });
 
@@ -68,13 +70,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
 
       toast.success("Registration successful");
       onRegisterSuccess(data.email);
-    } catch (error: unknown) {
-      if (
-        axios.isAxiosError(error) &&
-        error.response &&
-        error.response.data &&
-        error.response.data.message
-      ) {
+    } catch (error: any) {
+      if (error.response?.data?.message) {
         toast.error(error.response.data.message);
       } else {
         toast.error("An error occurred. Please try again.");
@@ -108,36 +105,51 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
       </div>
 
       <div>
-        <label htmlFor="names" className="block mb-1 font-medium">
-          Names
+        <label htmlFor="firstName" className="block mb-1 font-medium">
+          First Name
         </label>
         <Input
-          id="names"
+          id="firstName"
           className="py-6"
           type="text"
-          {...register("names")}
+          {...register("firstName")}
         />
-        {errors.names && (
-          <p className="text-green-600 text-sm mt-1">{errors.names.message}</p>
+        {errors.firstName && (
+          <p className="text-green-600 text-sm mt-1">{errors.firstName.message}</p>
         )}
       </div>
 
       <div>
-        <label htmlFor="telephone" className="block mb-1 font-medium">
-          Telephone
+        <label htmlFor="lastName" className="block mb-1 font-medium">
+          Last Name
         </label>
         <Input
-          id="telephone"
+          id="lastName"
           className="py-6"
           type="text"
-          {...register("telephone")}
+          {...register("lastName")}
         />
-        {errors.telephone && (
-          <p className="text-green-600 text-sm mt-1">
-            {errors.telephone.message}
-          </p>
+        {errors.lastName && (
+          <p className="text-green-600 text-sm mt-1">{errors.lastName.message}</p>
         )}
       </div>
+
+      {/* <div>
+        <label htmlFor="balance" className="block mb-1 font-medium">
+          Initial Balance (Optional)
+        </label>
+        <Input
+          id="balance"
+          className="py-6"
+          type="number"
+          step="0.01"
+          min="0"
+          {...register("balance", { valueAsNumber: true })}
+        />
+        {errors.balance && (
+          <p className="text-green-600 text-sm mt-1">{errors.balance.message}</p>
+        )}
+      </div> */}
 
       <div className="relative">
         <label htmlFor="password" className="block mb-1 font-medium">
@@ -197,7 +209,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
         {isSubmitting ? "Registering..." : "Register"}
       </Button>
 
-      <p className="text-center text-sm text-black">
+      <p className="text-center">
         Already have an account?{" "}
         <a href="/auth/login" className="text-green-600 hover:underline">
           Login here

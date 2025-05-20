@@ -2,12 +2,12 @@ import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import axios from "axios";
 import { toast } from "sonner";
 import { Input } from "../../../components/ui/input";
 import { Button } from "../../../components/ui/button";
 import { Eye, EyeOff } from "lucide-react";
-import API_ENDPOINTS from "../../../constants/api";
+import { useAuth } from "../../../contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Invalid email address" }),
@@ -18,12 +18,10 @@ const loginSchema = z.object({
 
 type LoginFormInputs = z.infer<typeof loginSchema>;
 
-interface LoginFormProps {
-  onLoginSuccess: () => void;
-}
-
-const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess }) => {
+const LoginForm: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
+  const navigate = useNavigate();
+  const { login } = useAuth();
 
   const {
     register,
@@ -39,22 +37,20 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess }) => {
 
   const onSubmit = async (data: LoginFormInputs) => {
     try {
-      const response = await axios.post(API_ENDPOINTS.auth.login, data);
-
-      if (response.status !== 200) {
-        toast.error(response.data.message || "Login failed");
-        return;
+      await login(data.email, data.password);
+      
+      // Get user role from localStorage
+      const userStr = localStorage.getItem("user");
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        if (user.role === "ADMIN") {
+          navigate("/dashboard/overview");
+        } else if (user.role === "USER") {
+          navigate("/dashboard/vehicles");
+        }
       }
-
-      const result = response.data;
-      if (result.data.token) {
-        localStorage.setItem("token", result.data.token);
-        localStorage.setItem("user", JSON.stringify(result.data.user));
-      }
-      toast.success("Login successful");
-      onLoginSuccess();
-    } catch (error: unknown) {
-      if (axios.isAxiosError(error) && error.response?.data?.message) {
+    } catch (error: any) {
+      if (error.response?.data?.message) {
         toast.error(error.response.data.message);
       } else {
         toast.error("An error occurred. Please try again.");

@@ -18,35 +18,47 @@ import UserPage from "./pages/users";
 import RequestPage from "./pages/requests";
 import SlotsPage from "./pages/slots";
 import VehiclePage from "./pages/vehicles";
+import { useAuth } from "./contexts/AuthContext";
 
 const PrivateRoute: React.FC<{
   children: ReactElement;
   allowedRoles: string[];
 }> = ({ children, allowedRoles }) => {
+  const { user, loading } = useAuth();
   const token = localStorage.getItem("token");
-  const user = localStorage.getItem("user");
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="w-10 h-10 border-4 border-green-300 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   if (!token || !user) {
-    return <Navigate to="/auth/register" replace />;
+    return <Navigate to="/auth/login" replace />;
   }
 
-  try {
-    const parsedUser = JSON.parse(user);
-    const UserRole = parsedUser.role;
-
-    if (allowedRoles.includes(UserRole)) {
-      return children;
-    } else {
-      return <Navigate to="/dashboard/vehicles" replace />;
-    }
-  } catch {
-    return <Navigate to="/auth/register" replace />;
+  if (allowedRoles.includes(user.role)) {
+    return children;
   }
+
+  return <Navigate to="/unauthorized" replace />;
 };
 
 const PublicRoute: React.FC<{ children: ReactElement }> = ({ children }) => {
+  const { user, loading } = useAuth();
   const token = localStorage.getItem("token");
-  return token ? <Navigate to="/dashboard/overview" replace /> : children;
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="w-10 h-10 border-4 border-green-300 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  return token && user ? <Navigate to="/dashboard/overview" replace /> : children;
 };
 
 const App: React.FC = () => {
@@ -66,9 +78,10 @@ const App: React.FC = () => {
           <Route path="register" element={<RegisterPage />} />
           <Route path="forgotPassword" element={<ForgotPasswordPage />} />
           <Route path="resetPassword" element={<ResetPasswordPage />} />
-          <Route path="*" element={<Navigate to="/auth/register" replace />} />
+          <Route path="*" element={<Navigate to="/auth/login" replace />} />
         </Route>
 
+        {/* Dashboard routes */}
         <Route
           path="/dashboard/*"
           element={
@@ -80,7 +93,7 @@ const App: React.FC = () => {
           <Route
             path="overview"
             element={
-              <PrivateRoute  allowedRoles={["ADMIN"]}>
+              <PrivateRoute allowedRoles={["ADMIN"]}>
                 <DashboardPage />
               </PrivateRoute>
             }
@@ -104,7 +117,7 @@ const App: React.FC = () => {
           <Route
             path="requests"
             element={
-              <PrivateRoute allowedRoles={["ADMIN","USER"]}>
+              <PrivateRoute allowedRoles={["ADMIN", "USER"]}>
                 <RequestPage />
               </PrivateRoute>
             }
@@ -117,12 +130,14 @@ const App: React.FC = () => {
               </PrivateRoute>
             }
           />
-          <Route path="unauthorized" element={<UnauthorizedPage />} />
-        </Route>
-        <Route path="/" element={<AuthLayout />}>
-        <Route index element={<Navigate to="/auth/login" replace />} />
+          <Route path="*" element={<Navigate to="/dashboard/overview" replace />} />
         </Route>
 
+        {/* Root route */}
+        <Route path="/" element={<Navigate to="/auth/login" replace />} />
+
+        {/* Error routes */}
+        <Route path="/unauthorized" element={<UnauthorizedPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </Router>

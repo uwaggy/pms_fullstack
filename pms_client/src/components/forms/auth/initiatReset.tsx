@@ -67,16 +67,16 @@ const InitiateResetForm: React.FC<InitiateResetFormProps> = ({
           id="email"
           type="email"
           {...register("email", { required: "Email is required" })}
-          className="border-black  py-6 focus:ring-purple-500"
+          className="border-black  py-6 focus:ring-green-500"
         />
         {errors.email && (
-          <p className="text-purple-600 text-sm mt-1">{errors.email.message}</p>
+          <p className="text-green-600 text-sm mt-1">{errors.email.message}</p>
         )}
       </div>
       <Button
         type="submit"
         disabled={isSubmitting}
-        className="w-full bg-purple-700 hover:bg-purple-800 focus:ring-purple-500  py-6"
+        className="w-full bg-green-700 hover:bg-green-800 focus:ring-green-500  py-6"
       >
         {isSubmitting ? "Sending..." : "Send Reset Email"}
       </Button>

@@ -11,6 +11,7 @@ import { useForm } from "react-hook-form";
 import { Button } from "../../ui/button";
 import { Input } from "../../ui/input";
 import { createVehicle, updateVehicle } from "../../../services/vehicleService";
+import { toast } from "sonner";
 
 interface CreateEditVehicleProps {
   isOpen: boolean;
@@ -18,14 +19,18 @@ interface CreateEditVehicleProps {
   vehicleToEdit?: {
     id?: string;
     plateNumber: string;
-    color: string;
+    parkingCode: string;
+    entryDateTime: string;
+    exitDateTime: string | null;
+    chargedAmount: number;
   } | null;
   onSuccess: () => void;
 }
 
 interface VehicleFormData {
   plateNumber: string;
-  color: string;
+  parkingCode: string;
+  entryDateTime: string;
 }
 
 const CreateEditVehicle: React.FC<CreateEditVehicleProps> = ({
@@ -46,10 +51,13 @@ const CreateEditVehicle: React.FC<CreateEditVehicleProps> = ({
     if (vehicleToEdit) {
       reset({
         plateNumber: vehicleToEdit.plateNumber,
-        color: vehicleToEdit.color,
+        parkingCode: vehicleToEdit.parkingCode,
+        entryDateTime: new Date(vehicleToEdit.entryDateTime).toISOString().slice(0, 16),
       });
     } else {
-      reset({});
+      reset({
+        entryDateTime: new Date().toISOString().slice(0, 16),
+      });
     }
   }, [vehicleToEdit, reset]);
 
@@ -58,15 +66,20 @@ const CreateEditVehicle: React.FC<CreateEditVehicleProps> = ({
     try {
       if (vehicleToEdit) {
         await updateVehicle(vehicleToEdit.id || "", data);
+        toast.success("Vehicle updated successfully");
       } else {
-        const user = localStorage.getItem("user");
-        const userId = user ? JSON.parse(user).id : "";
-        await createVehicle({ ...data, userId });
+        await createVehicle({
+          ...data,
+          exitDateTime: null,
+          chargedAmount: 0,
+        });
+        toast.success("Vehicle entry recorded successfully");
       }
       onSuccess();
       onOpenChange(false);
     } catch (error) {
       console.error("Failed to save vehicle", error);
+      toast.error("Failed to save vehicle");
     } finally {
       setLoading(false);
     }
@@ -75,28 +88,64 @@ const CreateEditVehicle: React.FC<CreateEditVehicleProps> = ({
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogTrigger />
-      <DialogContent>
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>
-            {vehicleToEdit ? "Edit Vehicle" : "Create Vehicle"}
+          <DialogTitle className="text-2xl text-green-700 font-semibold">
+            {vehicleToEdit ? "Edit Vehicle" : "Register Car Entry"}
           </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div>
-            <label className="block mb-1">Plate Number</label>
-            <Input {...register("plateNumber", { required: true })} />
+          <div className="space-y-2">
+            <label className="block text-green-700">Plate Number</label>
+            <Input 
+              {...register("plateNumber", { required: true })} 
+              className="border-green-200 focus:border-green-500"
+              placeholder="Enter plate number"
+            />
             {errors.plateNumber && (
               <p className="text-red-600">Plate Number is required</p>
             )}
           </div>
-          <div>
-            <label className="block mb-1">Color</label>
-            <Input {...register("color", { required: true })} />
-            {errors.color && <p className="text-green-600">Color is required</p>}
+
+          <div className="space-y-2">
+            <label className="block text-green-700">Parking Code</label>
+            <Input 
+              {...register("parkingCode", { required: true })} 
+              className="border-green-200 focus:border-green-500"
+              placeholder="Enter parking code"
+            />
+            {errors.parkingCode && (
+              <p className="text-red-600">Parking Code is required</p>
+            )}
           </div>
-          <DialogFooter>
-            <Button type="submit" disabled={loading}>
-              {loading ? "Saving..." : "Save"}
+
+          <div className="space-y-2">
+            <label className="block text-green-700">Entry Date/Time</label>
+            <Input 
+              type="datetime-local"
+              {...register("entryDateTime", { required: true })} 
+              className="border-green-200 focus:border-green-500"
+            />
+            {errors.entryDateTime && (
+              <p className="text-red-600">Entry Date/Time is required</p>
+            )}
+          </div>
+
+          <DialogFooter className="pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              className="border-green-200 hover:bg-green-50"
+            >
+              Cancel
+            </Button>
+            <Button 
+              type="submit" 
+              disabled={loading}
+              className="bg-green-700 hover:bg-green-800"
+            >
+              {loading ? "Saving..." : vehicleToEdit ? "Update" : "Register Entry"}
             </Button>
           </DialogFooter>
         </form>

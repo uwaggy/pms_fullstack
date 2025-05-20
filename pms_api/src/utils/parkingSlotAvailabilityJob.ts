@@ -1,34 +1,46 @@
-const cron = require("node-cron");
 import prisma from "../../prisma/prisma-client";
+import { scheduleJob } from "node-schedule";
 
-export const startParkingSlotAvailabilityJob = () => {
-  cron.schedule("* * * * *", async () => {
-    try {
-      const now = new Date();
-
-      const expiredRequests = await prisma.parkingRequest.findMany({
-        where: {
-          checkOut: {
-            lte: now,
-          },
-          status: "APPROVED",
-          parkingSlotId: {
-            not: null,
+// Job to update parking slot availability
+const updateParkingSlotAvailability = async () => {
+  try {
+    // Get all parking slots
+    const parkingSlots = await prisma.parkingSlot.findMany({
+      include: {
+        _count: {
+          select: {
+            parkingRequests: {
+              where: {
+                checkOut: null,
+              },
+            },
           },
         },
-      });
+      },
+    });
 
-      for (const request of expiredRequests) {
-        if (request.parkingSlotId) {
-          // Update parking slot to available
-          await prisma.parkingSlot.update({
-            where: { id: request.parkingSlotId },
-            data: { isAvailable: true },
-          });
-        }
-      }
-    } catch (error) {
-      console.error("Error running parking slot availability job:", error);
+    // Update each parking slot's available spaces
+    for (const slot of parkingSlots) {
+      const activeParkings = slot._count.parkingRequests;
+      const availableSpaces = slot.totalSpaces - activeParkings;
+
+      await prisma.parkingSlot.update({
+        where: { id: slot.id },
+        data: {
+          availableSpaces,
+        },
+      });
     }
-  });
+
+    console.log("Parking slot availability updated successfully");
+  } catch (error) {
+    console.error("Error updating parking slot availability:", error);
+  }
 };
+
+// Schedule the job to run every minute
+const scheduleParkingSlotAvailabilityJob = () => {
+  scheduleJob("*/1 * * * *", updateParkingSlotAvailability);
+};
+
+export default scheduleParkingSlotAvailabilityJob;

@@ -1,4 +1,4 @@
-import { compare, compareSync, hash } from "bcrypt";
+import { compare, compareSync, hash, hashSync } from "bcrypt";
 import { Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import prisma from "../../prisma/prisma-client";
@@ -49,7 +49,7 @@ const initiateResetPassword = async (req: Request, res: Response) => {
         passwordResetExpires,
       },
     });
-    await sendPaswordResetEmail(email, user.names, passwordResetCode);
+    await sendPaswordResetEmail(email, user.firstName, passwordResetCode);
     return ServerResponse.success(
       res,
       "Password reset email sent successfully"
@@ -123,7 +123,7 @@ const initiateEmailVerification: any = async (req:Request, res:Response) => {
 
     await sendAccountVerificationEmail(
       user.email,
-      user.names,
+      user.firstName,
       verificationCode
     );
 
@@ -160,10 +160,55 @@ const verifyEmail = async (req: Request, res: Response) => {
   }
 };
 
+const register = async (req: Request, res: Response) => {
+  try {
+    const { email, firstName, lastName, password } = req.body;
+
+    // Check if user already exists
+    const existingUser = await prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (existingUser) {
+      return ServerResponse.error(res, "User with this email already exists", 400);
+    }
+
+    // Hash password
+    const hashedPassword = hashSync(password, 10);
+
+    // Create user with essential fields
+    const user = await prisma.user.create({
+      data: {
+        email,
+        firstName,
+        lastName,
+        password: hashedPassword,
+        role: "USER", // Default role
+        profilePicture: "https://firebasestorage.googleapis.com/v0/b/relaxia-services.appspot.com/o/relaxia-profiles%2Fblank-profile-picture-973460_960_720.webp?alt=media",
+        verificationStatus: "UNVERIFIED",
+        passwordResetStatus: "IDLE"
+      },
+    });
+
+    // Generate token
+    const token = jwt.sign(
+      { id: user.id },
+      process.env.JWT_SECRET_KEY as string,
+      { expiresIn: "3d" }
+    );
+
+    return ServerResponse.created(res, "User registered successfully", { user, token });
+  } catch (error) {
+    console.error("Registration error:", error);
+    return ServerResponse.error(res, "Error occurred during registration", { error });
+  }
+};
+
 // grouping and exports all functions as a single object for use in route handlers.
 
 const authController = {
   login,
+  register,
   initiateResetPassword,
   resetPassword,
   initiateEmailVerification,

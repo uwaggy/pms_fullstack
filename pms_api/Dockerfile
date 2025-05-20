@@ -10,7 +10,8 @@ RUN yarn install
 # Copy the rest of the application code after installing dependencies
 COPY . .
 
-# Copy Prisma files after the dependencies have been installed
+# Copy Pri
+sma files after the dependencies have been installed
 COPY ./src/prisma ./src/prisma
 
 # Check if upload directories exists, create them if they don't and give permissions

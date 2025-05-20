@@ -1,44 +1,37 @@
-import swaggerAutogen from 'swagger-autogen';
+import swaggerJsdoc from "swagger-jsdoc";
+import { schemas } from "./schemas";
 
-const doc = {
-  info: {
-    version: "1.0.0",
-    title: "NE NodeJS Rest API",
-    description: "",
+const options: swaggerJsdoc.Options = {
+  definition: {
+    openapi: "3.0.0",
+    info: {
+      title: "Parking Management System API",
+      version: "1.0.0",
+      description: "API documentation for the Parking Management System",
+    },
+    servers: [
+      {
+        url: "http://localhost:5000/api",
+        description: "Development server",
+      },
+    ],
+    components: {
+      schemas,
+      securitySchemes: {
+        bearerAuth: {
+          type: "http",
+          scheme: "bearer",
+          bearerFormat: "JWT",
+        },
+      },
+    },
+    security: [
+      {
+        bearerAuth: [],
+      },
+    ],
   },
-  host: "localhost:4060",
-  basePath: "/api/v1",
-  schemes: ["http"],
-  consumes: ["application/json"],
-  produces: ["application/json"],
-  tags: [
-    {
-      name: "Auth",
-      description: "Authentication endpoints",
-    },
-    {
-      name: "Users",
-      description: "Users endpoints",
-    },
-  ],
-  securityDefinitions: {
-    bearerAuth: {
-      type: "apiKey",
-      name: "Authorization",
-      in: "header",
-    },
-  },
-  security: [
-    {
-      bearerAuth: [],
-    },
-  ],
-  definitions: {},
+  apis: ["./src/routes/*.ts"],
 };
 
-const outputFile = './src/swagger/doc/swagger.json';
-const routes = ['./src/routes/index.ts'];
-
-swaggerAutogen({ openapi: "3.0.0" })(outputFile, routes, doc).then(async () => {
-  await import("./../app");
-});
+export const swaggerSpec = swaggerJsdoc(options);

@@ -1,117 +1,239 @@
 import { Request, Response } from "express";
 import prisma from "../../prisma/prisma-client";
-import { CreateVehicleDTO, UpdateVehicleDTO } from "../dtos/vehicle.dto";
-import { validate } from "class-validator";
-import { plainToInstance } from "class-transformer";
 import { AuthRequest } from "../types";
+import ServerResponse from "../utils/ServerResponse";
 
-//Convert req.body to a CreateVehicleDTO instance and Validate it using class-validator.
-const createVehicle : any = async (req: AuthRequest, res: Response) => {
-    const dto = plainToInstance(CreateVehicleDTO, req.body);
-    const errors = await validate(dto);
-    if (errors.length > 0) {
-        return res.status(400).json({ errors });
-    }
-    //Check if a vehicle with the same plate number already exists.
-    const existingVehicle = await prisma.vehicle.findFirst({
-        where: {
-            plateNumber: dto.plateNumber,
-        },
-    });
-    if (existingVehicle) {
-        return res.status(400).json({ message: "Vehicle with this plate number already exists" });
-    }
-
+// Create a new vehicle entry
+const createVehicle = async (req: AuthRequest, res: Response) => {
     try {
+        if (!req.user) {
+            return ServerResponse.error(res, "User not authenticated", 401);
+        }
+
+        const { plateNumber, parkingCode } = req.body;
+
         const vehicle = await prisma.vehicle.create({
             data: {
-                plateNumber: dto.plateNumber,
-                color: dto.color,
-                userId: req.user.id,
-                status: "PENDING",
+                plateNumber,
+                parkingCode,
+                entryDateTime: new Date(),
+                exitDateTime: null,
+                chargedAmount: 0,
+                duration: null,
+                ticketNumber: null,
+                billNumber: null,
+                user: {
+                    connect: {
+                        id: req.user.id
+                    }
+                }
             },
         });
-        return res.status(201).json(vehicle);
-    } catch (error) {
-        return res.status(500).json({ message: "Failed to create vehicle", error });
+
+        return ServerResponse.created(res, "Vehicle entry recorded successfully", { vehicle });
+    } catch (error: any) {
+        console.error("Error creating vehicle:", error);
+        if (error.code === "P2002") {
+            return ServerResponse.error(res, "Plate number already exists", 400);
+        }
+        return ServerResponse.error(res, "Error creating vehicle", { error: error.message });
     }
 };
 
-
-//Retrieves all vehicles associated with the logged-in user (userId)
-const getUserVehicles:any = async (req: AuthRequest , res: Response) => {
+// Get all vehicles
+const getAllVehicles = async (req: Request, res: Response) => {
     try {
         const vehicles = await prisma.vehicle.findMany({
-            where: { userId: req.user.id },
+            include: {
+                user: {
+                    select: {
+                        id: true,
+                        firstName: true,
+                        lastName: true,
+                        email: true,
+                    },
+                },
+            },
+            orderBy: {
+                entryDateTime: 'desc'
+            }
         });
-        return res.status(200).json(vehicles);
-    } catch (error) {
-        return res.status(500).json({ message: "Failed to fetch vehicles", error });
+
+        return ServerResponse.success(res, "Vehicles fetched successfully", { vehicles });
+    } catch (error: any) {
+        console.error("Error fetching vehicles:", error);
+        return ServerResponse.error(res, "Error fetching vehicles", { error: error.message });
     }
 };
 
-
-//Fetches a single vehicle using its id from URL params.
+// Get vehicle by ID
 const getVehicleById = async (req: Request, res: Response) => {
-    const { id } = req.params;
     try {
         const vehicle = await prisma.vehicle.findUnique({
-            where: { id },
-        });
-        if (!vehicle) {
-            return res.status(404).json({ message: "Vehicle not found" });
-        }
-        return res.status(200).json(vehicle);
-    } catch (error) {
-        return res.status(500).json({ message: "Failed to fetch vehicle", error });
-    }
-};
-
-
-//Convert req.body into an instance of UpdateVehicleDTO Validate the incoming data.
-const updateVehicle = async (req: Request, res: Response) => {
-    const { id } = req.params;
-    const dto = plainToInstance(UpdateVehicleDTO, req.body);
-    const errors = await validate(dto, { skipMissingProperties: true });
-    if (errors.length > 0) {
-        return res.status(400).json({ errors });
-    }
-
-    try {
-        const vehicle = await prisma.vehicle.update({
-            where: { id },
-            data: {
-                plateNumber: dto.plateNumber,
-                color: dto.color,
-                status: dto.status,
+            where: { id: req.params.id },
+            include: {
+                user: {
+                    select: {
+                        id: true,
+                        firstName: true,
+                        lastName: true,
+                        email: true,
+                    },
+                },
             },
         });
-        return res.status(200).json(vehicle);
-    } catch (error) {
-        return res.status(500).json({ message: "Failed to update vehicle", error });
+
+        if (!vehicle) {
+            return ServerResponse.error(res, "Vehicle not found", 404);
+        }
+
+        return ServerResponse.success(res, "Vehicle fetched successfully", { vehicle });
+    } catch (error: any) {
+        console.error("Error fetching vehicle:", error);
+        return ServerResponse.error(res, "Error fetching vehicle", { error: error.message });
     }
 };
 
+// Update vehicle
+const updateVehicle = async (req: Request, res: Response) => {
+    try {
+        const { plateNumber, parkingCode } = req.body;
 
-//Deletes the vehicle with the specified id.
+        const vehicle = await prisma.vehicle.update({
+            where: { id: req.params.id },
+            data: {
+                plateNumber,
+                parkingCode,
+            },
+        });
+
+        return ServerResponse.success(res, "Vehicle updated successfully", { vehicle });
+    } catch (error: any) {
+        console.error("Error updating vehicle:", error);
+        if (error.code === "P2002") {
+            return ServerResponse.error(res, "Plate number already exists", 400);
+        }
+        return ServerResponse.error(res, "Error updating vehicle", { error: error.message });
+    }
+};
+
+// Record vehicle exit
+const recordVehicleExit = async (req: Request, res: Response) => {
+    try {
+        const { chargedAmount } = req.body;
+        const exitDateTime = new Date();
+
+        const vehicle = await prisma.vehicle.findUnique({
+            where: { id: req.params.id },
+        });
+
+        if (!vehicle) {
+            return ServerResponse.error(res, "Vehicle not found", 404);
+        }
+
+        if (vehicle.exitDateTime) {
+            return ServerResponse.error(res, "Vehicle has already exited", 400);
+        }
+
+        const duration = Math.round((exitDateTime.getTime() - vehicle.entryDateTime.getTime()) / (1000 * 60));
+
+        const updatedVehicle = await prisma.vehicle.update({
+            where: { id: req.params.id },
+            data: {
+                exitDateTime,
+                chargedAmount,
+                duration,
+            },
+        });
+
+        return ServerResponse.success(res, "Vehicle exit recorded successfully", { vehicle: updatedVehicle });
+    } catch (error: any) {
+        console.error("Error recording vehicle exit:", error);
+        return ServerResponse.error(res, "Error recording vehicle exit", { error: error.message });
+    }
+};
+
+// Delete vehicle
 const deleteVehicle = async (req: Request, res: Response) => {
-    const { id } = req.params;
     try {
         await prisma.vehicle.delete({
-            where: { id },
+            where: { id: req.params.id },
         });
-        return res.status(204).send();
-    } catch (error) {
-        return res.status(500).json({ message: "Failed to delete vehicle", error });
+
+        return ServerResponse.success(res, "Vehicle deleted successfully");
+    } catch (error: any) {
+        console.error("Error deleting vehicle:", error);
+        return ServerResponse.error(res, "Error deleting vehicle", { error: error.message });
     }
 };
-// Final Export
+
+// Generate ticket
+const generateTicket = async (req: Request, res: Response) => {
+    try {
+        const vehicle = await prisma.vehicle.findUnique({
+            where: { id: req.params.id },
+        });
+
+        if (!vehicle) {
+            return ServerResponse.error(res, "Vehicle not found", 404);
+        }
+
+        const ticketNumber = `TKT-${Date.now()}`;
+
+        const updatedVehicle = await prisma.vehicle.update({
+            where: { id: req.params.id },
+            data: {
+                ticketNumber,
+            },
+        });
+
+        return ServerResponse.success(res, "Ticket generated successfully", { vehicle: updatedVehicle });
+    } catch (error: any) {
+        console.error("Error generating ticket:", error);
+        return ServerResponse.error(res, "Error generating ticket", { error: error.message });
+    }
+};
+
+// Generate bill
+const generateBill = async (req: Request, res: Response) => {
+    try {
+        const vehicle = await prisma.vehicle.findUnique({
+            where: { id: req.params.id },
+        });
+
+        if (!vehicle) {
+            return ServerResponse.error(res, "Vehicle not found", 404);
+        }
+
+        if (!vehicle.exitDateTime) {
+            return ServerResponse.error(res, "Cannot generate bill for vehicle that hasn't exited", 400);
+        }
+
+        const billNumber = `BILL-${Date.now()}`;
+
+        const updatedVehicle = await prisma.vehicle.update({
+            where: { id: req.params.id },
+            data: {
+                billNumber,
+            },
+        });
+
+        return ServerResponse.success(res, "Bill generated successfully", { vehicle: updatedVehicle });
+    } catch (error: any) {
+        console.error("Error generating bill:", error);
+        return ServerResponse.error(res, "Error generating bill", { error: error.message });
+    }
+};
+
 const vehicleController = {
     createVehicle,
-    getUserVehicles,
+    getAllVehicles,
     getVehicleById,
     updateVehicle,
+    recordVehicleExit,
     deleteVehicle,
+    generateTicket,
+    generateBill,
 };
 
 export default vehicleController;

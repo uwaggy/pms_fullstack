@@ -112,7 +112,7 @@ const ResetConfirmForm: React.FC<ResetConfirmFormProps> = ({
             ))}
           </div>
           {errors.code && (
-            <p className="text-purple-600 text-sm mt-1">
+            <p className="text-green-600 text-sm mt-1">
               {errors.code.message}
             </p>
           )}
@@ -123,7 +123,7 @@ const ResetConfirmForm: React.FC<ResetConfirmFormProps> = ({
           <Button
             type="button"
             onClick={handleNext}
-            className="w-full bg-purple-600 py-6 mt-4"
+            className="w-full bg-green-600 py-6 mt-4"
           >
             Next
           </Button>
@@ -154,7 +154,7 @@ const ResetConfirmForm: React.FC<ResetConfirmFormProps> = ({
               {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
             {errors.password && (
-              <p className="text-purple-600 text-sm mt-1">
+              <p className="text-green-600 text-sm mt-1">
                 {errors.password.message}
               </p>
             )}
@@ -184,7 +184,7 @@ const ResetConfirmForm: React.FC<ResetConfirmFormProps> = ({
               {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
             {errors.confirmPassword && (
-              <p className="text-purple-600 text-sm mt-1">
+              <p className="text-green-600 text-sm mt-1">
                 {errors.confirmPassword.message}
               </p>
             )}
@@ -193,7 +193,7 @@ const ResetConfirmForm: React.FC<ResetConfirmFormProps> = ({
           <Button
             type="submit"
             disabled={isSubmitting}
-            className="w-full bg-purple-600 hover:bg-purple-700 py-6"
+            className="w-full bg-green-600 hover:bg-green-700 py-6"
           >
             {isSubmitting ? "Resetting..." : "Reset Password"}
           </Button>

@@ -10,8 +10,8 @@ export class CreateParkingRequestDTO {
     checkIn: string;
 
     @IsDateString()
-    @IsNotEmpty()
-    checkOut: string;
+    @IsOptional()
+    checkOut?: string;
 }
 
 export class UpdateParkingRequestDTO {

@@ -13,17 +13,18 @@ config();
 //create user
 const createUser = async (req: Request, res: Response) => {
   try {
-    const { email, names, telephone, password,role } = req.body;
+    const { email, firstName, lastName, password, role,  } = req.body;
     console.log("body", req.body);
     const hashedPassword = hashSync(password, 10);
     console.log("hashedPassword", hashedPassword);
     const user = await prisma.user.create({
       data: {
         email,
-        names,
+        firstName,
+        lastName,
         role,
         password: hashedPassword,
-        telephone,
+     
       },
     });
     // const token = jwt.sign(
@@ -60,13 +61,16 @@ const createUser = async (req: Request, res: Response) => {
 //update user
 const updateUser: any = async (req: AuthRequest, res: Response) => {
   try {
-    const { email, names, telephone } = req.body;
+    if (!req.user) {
+      return ServerResponse.error(res, "User not authenticated", 401);
+    }
+    const { email, firstName, lastName } = req.body;
     const user = await prisma.user.update({
       where: { id: req.user.id },
       data: {
         email,
-        names,
-        telephone,
+        firstName,
+        lastName
       },
     });
     return ServerResponse.success(res, "User updated successfully", { user });
@@ -89,6 +93,9 @@ const updateUser: any = async (req: AuthRequest, res: Response) => {
 //get logged in user
 const me: any = async (req: AuthRequest, res: Response) => {
   try {
+    if (!req.user) {
+      return ServerResponse.error(res, "User not authenticated", 401);
+    }
     const user = await prisma.user.findUnique({ where: { id: req.user.id } });
     return ServerResponse.success(res, "User fetched successfully", { user });
   } catch (error) {
@@ -123,7 +130,7 @@ const searchUser = async (req: Request, res: Response) => {
     //Expects a URL parameter named query Example URL: /api/users/search/John
     const { query } = req.params;
     const users = await prisma.user.findMany({
-      where: { names: { contains: query, mode: "insensitive" } },
+      where: { firstName: { contains: query, mode: "insensitive" } },
     });
     return ServerResponse.success(res, "Users fetched successfully", { users });
   } catch (error) {
@@ -135,6 +142,9 @@ const searchUser = async (req: Request, res: Response) => {
 //Delete user
 const deleteUser: any = async (req: AuthRequest, res: Response) => {
   try {
+    if (!req.user) {
+      return ServerResponse.error(res, "User not authenticated", 401);
+    }
     const user = await prisma.user.delete({ where: { id: req.user.id } });
     return ServerResponse.success(res, "User deleted successfully", { user });
   } catch (error) {
@@ -145,6 +155,9 @@ const deleteUser: any = async (req: AuthRequest, res: Response) => {
 //To remove a custom avatar/profile picture by replacing it with a predefined default profile picture URL.
 const removeAvatar: any = async (req: AuthRequest, res: Response) => {
   try {
+    if (!req.user) {
+      return ServerResponse.error(res, "User not authenticated", 401);
+    }
     const user = await prisma.user.update({
       where: { id: req.user.id },
       data: {
@@ -172,6 +185,9 @@ const deleteById = async (req: Request, res: Response) => {
 //This function allows an authenticated user to change/update their profile picture (avatar).
 const updateAvatar: any = async (req: AuthRequest, res: Response) => {
   try {
+    if (!req.user) {
+      return ServerResponse.error(res, "User not authenticated", 401);
+    }
     const user = await prisma.user.update({
       where: { id: req.user.id },
       data: {
@@ -188,9 +204,12 @@ const updateAvatar: any = async (req: AuthRequest, res: Response) => {
 //The user passes in the old password we find him using the id we verify the password using comparesync and bycrypt
 const updatePassword: any = async (req: AuthRequest, res: Response) => {
   try {
+    if (!req.user) {
+      return ServerResponse.error(res, "User not authenticated", 401);
+    }
     const { oldPassword, newPassword } = req.body;
     const user = await prisma.user.findUnique({ where: { id: req.user.id } });
-    if (!user) ServerResponse.error(res, "User not found", 404);
+    if (!user) return ServerResponse.error(res, "User not found", 404);
     const isPasswordValid = compareSync(oldPassword, (user as User).password);
     if (!isPasswordValid)
       return ServerResponse.error(res, "Invalid old password", 400);

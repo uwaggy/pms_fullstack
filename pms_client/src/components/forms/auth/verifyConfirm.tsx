@@ -93,14 +93,14 @@ const VerifyConfirmForm: React.FC<VerifyConfirmFormProps> = ({
             ref={(el: HTMLInputElement | null) => {
               inputsRef.current[idx] = el;
             }}
-            className="w-12 h-12 text-center text-2xl border border-black rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
+            className="w-12 h-12 text-center text-2xl border border-black rounded focus:outline-none focus:ring-2 focus:ring-green-500"
           />
         ))}
       </div>
       <div className="w-full flex gap-4 justify-between items-center">
         <Button
           type="submit"
-          className="w-1/2 bg-purple-700 hover:bg-purple-800 "
+          className="w-1/2 bg-green-700 hover:bg-green-800 "
         >
           Verify Email
         </Button>

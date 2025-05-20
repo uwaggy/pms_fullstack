@@ -1,11 +1,11 @@
-import { NextFunction, Request, RequestHandler, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
-import { AuthMiddleware, AuthRequest } from "../types";
+import { AuthRequest } from "../types";
 import prisma from "../../prisma/prisma-client";
 import ServerResponse from "../utils/ServerResponse";
 
 // verify that a user is logged in by checking and validating their JWT token from the request headers.
-export const checkLoggedIn:any = (
+export const checkLoggedIn = (
   req: AuthRequest,
   res: Response,
   next: NextFunction
@@ -21,7 +21,7 @@ export const checkLoggedIn:any = (
     if (token.toLowerCase().startsWith("bearer ")) {
       token = token.split(" ")[1];
     }
-//Verifies the token using a secret key.
+    //Verifies the token using a secret key.
     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY as string);
 
     if (!decoded) {
@@ -36,18 +36,14 @@ export const checkLoggedIn:any = (
   }
 };
 
-
-
 //ensure that the logged-in user is an admin before allowing access to certain routes.
-export const checkAdmin:any = async (
+export const checkAdmin = async (
   req: AuthRequest,
   res: Response,
   next: NextFunction
 ) => {
   try {
     let token = req.headers.authorization;
-    console.log("Token:", token);
-    console.log("Headers:", req.headers);
     if (!token) {
       return ServerResponse.unauthorized(res, "You are not an admin");
     }
@@ -57,7 +53,7 @@ export const checkAdmin:any = async (
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY as string);
-//Uses the decoded user ID to fetch the user from the database.
+    //Uses the decoded user ID to fetch the user from the database.
     const user = await prisma.user.findUnique({
       where: { id: (decoded as any).id },
     });
@@ -66,8 +62,7 @@ export const checkAdmin:any = async (
       return ServerResponse.unauthorized(res, "User not found");
     }
     //Checks if the user's role is "ADMIN".
-//If the user is admin, attaches the user ID to req.user and proceeds.
-
+    //If the user is admin, attaches the user ID to req.user and proceeds.
     if (user.role !== "ADMIN") {
       return ServerResponse.unauthorized(
         res,

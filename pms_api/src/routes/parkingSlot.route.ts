@@ -1,24 +1,27 @@
 import { Router } from "express";
-import {
-  getAllParkingSlots,
-  getParkingSlotById,
-  createParkingSlot,
-  updateParkingSlot,
-  deleteParkingSlot,
-  getAvailableParkingSlots,
-} from "../controllers/parkingSlot.controller";
-import { checkAdmin } from "../middlewares/auth.middleware";
+import parkingSlotController from "../controllers/parkingSlot.controller";
+import { checkLoggedIn } from "../middlewares/auth.middleware";
 import { validationMiddleware } from "../middlewares/validator.middleware";
 import { CreateParkingSlotDto, UpdateParkingSlotDto } from "../dtos/parkingSlot.dto";
 
 const router = Router();
-router.use(checkAdmin);
 
-router.get("/", getAllParkingSlots);
-router.get("/available", getAvailableParkingSlots); // Get all available parking slots
-router.get("/:id", getParkingSlotById);
-router.post("/", validationMiddleware(CreateParkingSlotDto), createParkingSlot);
-router.put("/:id", validationMiddleware(UpdateParkingSlotDto, true), updateParkingSlot);
-router.delete("/:id", deleteParkingSlot);
+// Get all parking slots
+router.get("/", checkLoggedIn, parkingSlotController.getAllParkingSlots);
+
+// Get parking slot by ID
+router.get("/:id", checkLoggedIn, parkingSlotController.getParkingSlotById);
+
+// Create parking slot
+router.post("/", checkLoggedIn, validationMiddleware(CreateParkingSlotDto), parkingSlotController.createParkingSlot);
+
+// Update parking slot
+router.put("/:id", checkLoggedIn, validationMiddleware(UpdateParkingSlotDto, true), parkingSlotController.updateParkingSlot);
+
+// Delete parking slot
+router.delete("/:id", checkLoggedIn, parkingSlotController.deleteParkingSlot);
+
+// Get available parking slots
+router.get("/available", checkLoggedIn, parkingSlotController.getAvailableParkingSlots);
 
 export default router;
